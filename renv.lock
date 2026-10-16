@@ -1,0 +1,24 @@
+{
+  "R": {
+    "Version": "4.3.3",
+    "Repositories": [
+      {"Name": "CRAN", "URL": "https://cloud.r-project.org"}
+    ]
+  },
+  "Bioconductor": {"Version": "3.18"},
+  "Packages": {
+    "GUniFrac": {"Package": "GUniFrac", "Version": "1.9", "Source": "Repository", "Repository": "CRAN"},
+    "ape": {"Package": "ape", "Version": "5.8-1", "Source": "Repository", "Repository": "CRAN"},
+    "digest": {"Package": "digest", "Version": "0.6.39", "Source": "Repository", "Repository": "CRAN"},
+    "ggplot2": {"Package": "ggplot2", "Version": "4.0.3", "Source": "Repository", "Repository": "CRAN"},
+    "lme4": {"Package": "lme4", "Version": "2.0-1", "Source": "Repository", "Repository": "CRAN"},
+    "permute": {"Package": "permute", "Version": "0.9-10", "Source": "Repository", "Repository": "CRAN"},
+    "phyloseq": {"Package": "phyloseq", "Version": "1.46.0", "Source": "Bioconductor"},
+    "renv": {"Package": "renv", "Version": "1.1.5", "Source": "Repository", "Repository": "CRAN"},
+    "scales": {"Package": "scales", "Version": "1.4.0", "Source": "Repository", "Repository": "CRAN"},
+    "sessioninfo": {"Package": "sessioninfo", "Version": "1.2.3", "Source": "Repository", "Repository": "CRAN"},
+    "testthat": {"Package": "testthat", "Version": "3.3.2", "Source": "Repository", "Repository": "CRAN"},
+    "vegan": {"Package": "vegan", "Version": "2.7-3", "Source": "Repository", "Repository": "CRAN"},
+    "yaml": {"Package": "yaml", "Version": "2.3.12", "Source": "Repository", "Repository": "CRAN"}
+  }
+}

@@ -1,0 +1,55 @@
+analysis:
+  seed: 20260716
+  mode: smoke
+  baseline_repeats:
+    smoke: 100
+    development: 500
+    production: 1000
+data:
+  input: "data/processed/cleaned_data.rds"
+  smoke_input_fallback: null  # Supply authorized input; no private snapshot fallback is bundled.
+  existing_run: "results/random_forest/rf_20260715_160907"
+  sample_id: "sampleID"
+  subject_id: "Subject"
+  feature_id: "MAG"
+  abundance: "Y"
+  outcome: "altitude"
+  altitude_levels: ["0", "3650", "5200", "6500"]
+  timepoint: "Timepoint"
+  sampling_date: "date_converted"
+  days_from_baseline: "days_from_baseline_subject"
+  days_from_global_baseline: "days_from_baseline_global"
+  phase: null
+preprocessing:
+  transform: "log10_pseudocount"
+  pseudocount: 2.074295e-09
+  max_missing_fraction: 0.20
+  sample_prevalence: 0.10
+  subject_prevalence_min: 2
+  min_mean_abundance: 0
+  top_n: null
+model:
+  implementation: "randomForest"
+  smoke_trees: 50
+  development_trees: 500
+  production_trees: 2000
+  mtry: "sqrt"
+  min_node_size: 5
+  replace: true
+  sample_fraction: 1.0
+  tuning: "fixed"
+grouped_cv:
+  folds: 5
+  repeats: 10
+tree_stability:
+  smoke: [25, 50]
+  development: [500, 1000, 2000, 5000]
+  production: [500, 1000, 2000, 5000, 10000]
+outcomes:
+  four_class: true
+  ordinal_metrics: true
+  numeric_regression: false
+  phase: false
+  baseline_change: false
+results:
+  output_root: "results/random_forest_subject_validation"

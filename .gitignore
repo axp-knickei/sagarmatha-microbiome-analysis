@@ -1,0 +1,147 @@
+# Data — too large, stays on HPC
+data/raw/*
+data/processed/*
+data/**/*.rds
+data/*-before-nebula-sync-*/
+data/GDTB.csv
+data/gut.csv
+data/raw/GDTB.csv
+data/raw/gut.csv
+data/raw/sample_info.csv
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Results — generated from scripts
+results/figures/*
+results/tables/*
+results/logs/*
+results/hpc_per_mag_lmertest/
+results/*_validation/
+results/random_forest/
+results/beta_diversity/
+results/beta_diversity_test/
+results/netmoss_readiness/
+results/netmoss/
+results/netmoss_altitude/
+results/netmoss_altitude_stability/
+results/netmoss_altitude_stability_smoke/
+results/netmoss_smoke/
+results/netmoss_matched_timepoint_companion/
+results/netmoss_matched_timepoint_smoke/
+results/mag_functional_annotation/
+results/manuscript_functional_synthesis/
+results/manuscript_diversity_per_mag/
+results/hpc_execution_records_combined.*
+results/alpha_diversity/tables/*.rds
+results/class1_window_lmertest/logs/
+results/class1_window_lmertest/session/
+results/class1_window_lmertest/tables/
+results/class1_window_lmertest/figures/
+results/*.rds
+!results/figures/.gitkeep
+!results/tables/.gitkeep
+!results/logs/.gitkeep
+
+# Separate literature-review publication — local only
+/docs/literature-review/
+
+# HPC-specific (contains your username, paths)
+hpc/*.local.*
+!hpc/job_template.pbs
+!hpc/setup_hpc.sh
+
+# Local secrets and credentials
+.env
+.env.*
+!.env.example
+secrets.md
+secrets.*
+local_config.yaml
+local_config.yml
+local_config.json
+local_config.toml
+*.pem
+*.key
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+.ssh/
+!config.example.yaml
+!hpc_login.example.md
+
+# HPC scheduler outputs and transient logs
+*.o[0-9]*
+*.e[0-9]*
+*.out
+*.err
+*.log
+*.tar.gz
+logs/
+tmp/
+results/functional_community_dynamics/
+
+# Python / uv local environments and caches
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# R
+.Rhistory
+.RData
+.Renviron
+*.Rproj
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE metadata (shared VS Code settings remain tracked)
+.idea/
+
+# Renv (if using renv for package management)
+renv/library/
+renv/staging/
+renv/.gitignore
+renv/activate.R
+renv/settings.json
+
+# v1.0.0 preparation: local backups/caches and explicitly out-of-scope work
+/Rplots.pdf
+/scripts/netmoss/tests/Rplots.pdf
+/graphify-out/
+/.codex/hooks.json
+/hpc-downloaded-logs/
+/results/results/netmoss_historical_reproduction/
+/results/data_inspection/abundance_totals/
+/docs/data/multi-omics-*
+/docs/per-mag-missing-fraction-normalization-plan.md
+/scripts/inspection/harmonize_pbmc_metadata.py
+/scripts/inspection/report_abundance_totals.R
+/renv/cache/
+/.conda/
+/.envs/
+*.RDataTmp
+*.swp
+*~
+
+# Public code archive: local generated scientific reports and all result families
+/docs/reports/
+/results/*/
+!/results/figures/
+!/results/tables/
+!/results/logs/
+/results/figures/*
+/results/tables/*
+/results/logs/*
+!/results/figures/.gitkeep
+!/results/tables/.gitkeep
+!/results/logs/.gitkeep
+
+# Public-checkout synchronization backups are private generated material.
+/sagarmatha-microbiome-analysis-before-nebula-sync-*/
+/results/sagarmatha-microbiome-analysis-before-nebula-sync-*/

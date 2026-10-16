@@ -1,0 +1,21 @@
+#!/bin/bash
+#PBS -N blackice_netmoss_ready
+#PBS -l nodes=1:ppn=2,mem=8gb,walltime=01:00:00
+#PBS -j oe
+#PBS -o logs/blackice_netmoss_readiness.pbs.log
+
+# Run the read-only suitability assessment on a compute node.
+# qsub hpc/job_netmoss_readiness.pbs
+
+set -euo pipefail
+cd "${PBS_O_WORKDIR:-$PWD}"
+mkdir -p logs results/netmoss_readiness
+source hpc/netmoss_common.sh
+print_netmoss_job_context
+setup_netmoss_conda
+
+read -r -a rscript_cmd <<<"${NETMOSS_RSCRIPT}"
+"${rscript_cmd[@]}" scripts/netmoss/validate_environment.R
+"${rscript_cmd[@]}" scripts/check_netmoss_readiness.R --force
+
+echo "NetMoss readiness job completed: $(date)"

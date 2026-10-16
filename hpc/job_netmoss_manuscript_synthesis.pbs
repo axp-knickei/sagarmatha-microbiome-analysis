@@ -1,0 +1,36 @@
+#!/bin/bash
+#PBS -N blackice_netmoss_ms
+#PBS -q workq
+#PBS -l nodes=1:ppn=1,mem=8gb,walltime=01:00:00
+#PBS -j oe
+#PBS -o logs/blackice_netmoss_manuscript_synthesis.pbs.log
+
+# Reader-first manuscript post-processing of a completed NetMoss result.
+# This job does not rerun SparCC or NetMoss2 and does not alter source results.
+
+set -euo pipefail
+cd "${PBS_O_WORKDIR:-$PWD}"
+mkdir -p logs
+source hpc/netmoss_common.sh
+print_netmoss_job_context
+setup_netmoss_conda
+
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+
+CONFIG="${NETMOSS_MANUSCRIPT_CONFIG:-config/netmoss_manuscript_synthesis.yml}"
+FORCE="${NETMOSS_MANUSCRIPT_FORCE:-0}"
+read -r -a rscript_cmd <<<"${NETMOSS_RSCRIPT}"
+export NETMOSS_MANUSCRIPT_RSCRIPT="${rscript_cmd[*]}"
+
+run_args=(--config "$CONFIG")
+case "$FORCE" in
+  1|true|TRUE|yes|YES) run_args+=(--force) ;;
+  0|false|FALSE|no|NO) ;;
+  *) echo "ERROR: NETMOSS_MANUSCRIPT_FORCE must be 0/1, true/false, or yes/no." >&2; exit 2 ;;
+esac
+
+"${rscript_cmd[@]}" scripts/validate_netmoss_manuscript_environment.R
+bash scripts/run_netmoss_manuscript_synthesis.sh "${run_args[@]}"
+echo "NetMoss manuscript synthesis completed: $(date)"

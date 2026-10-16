@@ -1,0 +1,88 @@
+#!/bin/bash
+#PBS -N blackice_beta_full
+#PBS -l nodes=1:ppn=4,mem=16gb,walltime=04:00:00
+#PBS -j oe
+#PBS -o blackice_beta_diversity.pbs.log
+
+# OpenPBS wrapper for the full longitudinal beta-diversity workflow.
+# Submit from the repository root:
+#   qsub hpc/beta_diversity_full.pbs
+#
+# Useful overrides:
+#   qsub -v CONDA_MODULE_NAME=intelpython/2022.2.0,CONDA_ENV_NAME=glmm-hpc hpc/beta_diversity_full.pbs
+#   qsub -v BETA_CONFIG=config/beta_diversity_test.yml,BETA_FORCE=1 hpc/beta_diversity_full.pbs
+
+set -euo pipefail
+
+cd "${PBS_O_WORKDIR:-$PWD}"
+
+mkdir -p logs
+
+RUN_LABEL="${PBS_JOBNAME:-blackice_beta_full}.${PBS_JOBID:-local}"
+exec > >(tee -a "logs/${RUN_LABEL}.out") 2> >(tee -a "logs/${RUN_LABEL}.err" >&2)
+
+echo "=== BlackICE beta-diversity job started: $(date) ==="
+echo "Host: $(hostname)"
+echo "Working directory: $(pwd)"
+echo "PBS job id: ${PBS_JOBID:-local}"
+echo "Git commit: $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+
+CONDA_MODULE="${CONDA_MODULE_NAME:-intelpython/2022.2.0}"
+
+if command -v module >/dev/null 2>&1; then
+  module purge || true
+  if [ -n "$CONDA_MODULE" ]; then
+    module load "$CONDA_MODULE"
+  fi
+fi
+
+if ! command -v conda >/dev/null 2>&1; then
+  for conda_profile in \
+    "$HOME/miniconda3/etc/profile.d/conda.sh" \
+    "$HOME/anaconda3/etc/profile.d/conda.sh" \
+    "$HOME/mambaforge/etc/profile.d/conda.sh" \
+    "$HOME/miniforge3/etc/profile.d/conda.sh"
+  do
+    if [ -f "$conda_profile" ]; then
+      # shellcheck disable=SC1090
+      source "$conda_profile"
+      break
+    fi
+  done
+fi
+
+if ! command -v conda >/dev/null 2>&1; then
+  echo "ERROR: conda command was not found. Set CONDA_MODULE_NAME or install/create the Conda environment first." >&2
+  exit 1
+fi
+
+CONDA_ENV="${CONDA_ENV_NAME:-glmm-hpc}"
+export BETA_CONFIG="${BETA_CONFIG:-config/beta_diversity.yml}"
+export BETA_THREADS="${BETA_THREADS:-${PBS_NP:-4}}"
+
+test -f "$BETA_CONFIG" || {
+  echo "ERROR: beta-diversity configuration not found: $BETA_CONFIG" >&2
+  exit 1
+}
+
+RUN_ARGS=()
+case "${BETA_FORCE:-0}" in
+  1|true|TRUE|yes|YES) RUN_ARGS+=(--force) ;;
+  0|false|FALSE|no|NO) ;;
+  *)
+    echo "ERROR: BETA_FORCE must be 0/1, true/false, or yes/no." >&2
+    exit 1
+    ;;
+esac
+
+echo "Conda module: $CONDA_MODULE"
+echo "Conda environment: $CONDA_ENV"
+echo "Beta-diversity config: $BETA_CONFIG"
+echo "Beta-diversity threads: $BETA_THREADS"
+echo "Overwrite existing outputs: ${BETA_FORCE:-0}"
+
+CONDA_RUN=(conda run --no-capture-output -n "$CONDA_ENV")
+"${CONDA_RUN[@]}" bash scripts/validate_beta_diversity_environment.sh
+"${CONDA_RUN[@]}" bash scripts/run_beta_diversity_hpc.sh "${RUN_ARGS[@]}"
+
+echo "=== BlackICE beta-diversity job finished: $(date) ==="

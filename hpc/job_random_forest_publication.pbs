@@ -1,0 +1,61 @@
+#!/bin/bash
+#PBS -N blackice_rf_figure
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=16gb
+#PBS -l walltime=04:00:00
+#PBS -j oe
+#PBS -o logs/blackice_random_forest_publication.pbs.log
+
+# Build publication figures from a completed Random Forest run.
+# Optional override:
+#   qsub -v RF_RUN_DIR=results/random_forest/rf_YYYYMMDD_HHMMSS hpc/job_random_forest_publication.pbs
+
+set -euo pipefail
+cd "${PBS_O_WORKDIR:-$PWD}"
+mkdir -p logs
+
+CONDA_MODULE="${CONDA_MODULE_NAME:-intelpython/2022.2.0}"
+if command -v module >/dev/null 2>&1; then
+  module purge || true
+  module load "$CONDA_MODULE"
+fi
+
+if ! command -v conda >/dev/null 2>&1; then
+  for conda_profile in \
+    "$HOME/miniconda3/etc/profile.d/conda.sh" \
+    "$HOME/anaconda3/etc/profile.d/conda.sh" \
+    "$HOME/mambaforge/etc/profile.d/conda.sh" \
+    "$HOME/miniforge3/etc/profile.d/conda.sh"
+  do
+    if [ -f "$conda_profile" ]; then
+      # shellcheck disable=SC1090
+      source "$conda_profile"
+      break
+    fi
+  done
+fi
+
+if ! command -v conda >/dev/null 2>&1; then
+  echo "ERROR: conda command was not found." >&2
+  exit 1
+fi
+
+CONDA_ENV="${CONDA_ENV_NAME:-glmm-hpc}"
+RF_RUN_DIR="${RF_RUN_DIR:-}"
+RF_BOOTSTRAPS="${RF_BOOTSTRAPS:-1000}"
+RF_FIGURE_EXTRA_ARGS="${RF_FIGURE_EXTRA_ARGS:-}"
+
+args=(
+  scripts/create_random_forest_publication_figure.R
+  --bootstrap-replicates "$RF_BOOTSTRAPS"
+)
+if [ -n "$RF_RUN_DIR" ]; then
+  args+=(--run-dir "$RF_RUN_DIR")
+fi
+
+echo "=== Random Forest publication job started: $(date) ==="
+echo "Run directory: ${RF_RUN_DIR:-newest completed rf_* run}"
+echo "Bootstrap replicates: $RF_BOOTSTRAPS"
+# shellcheck disable=SC2086
+conda run --no-capture-output -n "$CONDA_ENV" Rscript "${args[@]}" $RF_FIGURE_EXTRA_ARGS
+echo "=== Random Forest publication job finished: $(date) ==="

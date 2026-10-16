@@ -1,0 +1,24 @@
+#!/bin/bash
+#PBS -N blackice_netmoss_pub
+#PBS -l nodes=1:ppn=2,mem=16gb,walltime=02:00:00
+#PBS -j oe
+#PBS -o logs/blackice_netmoss_publication.pbs.log
+
+# Regenerate figures, source data, legends, and Methods text from existing
+# results/netmoss outputs without rerunning NetMoss2.
+# qsub hpc/job_netmoss_publication.pbs
+
+set -euo pipefail
+cd "${PBS_O_WORKDIR:-$PWD}"
+mkdir -p logs
+source hpc/netmoss_common.sh
+print_netmoss_job_context
+setup_netmoss_conda
+
+read -r -a rscript_cmd <<<"${NETMOSS_RSCRIPT}"
+"${rscript_cmd[@]}" scripts/netmoss/validate_environment.R
+"${rscript_cmd[@]}" scripts/netmoss/create_publication_outputs.R \
+  --config config/netmoss_analysis.yml \
+  --force
+
+echo "NetMoss publication-output job completed: $(date)"

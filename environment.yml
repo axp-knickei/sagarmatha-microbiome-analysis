@@ -1,0 +1,63 @@
+name: glmm-hpc
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - r-base=4.3
+  - r-lme4
+  - r-lmertest
+  - r-glmmtmb
+  - r-nlme
+  - r-readr
+  - r-data.table
+  - r-matrix
+  - r-vegan
+  - r-ape
+  - bioconductor-phyloseq
+  - r-gunifrac
+  - r-permute
+  - r-ggplot2
+  - r-ggrepel
+  - r-scales
+  - r-viridislite
+  - r-patchwork
+  - r-gridextra
+  - r-svglite
+  - r-ragg
+  - r-dplyr
+  - r-tidyr
+  - r-lubridate
+  - r-knitr
+  - r-rmarkdown
+  - r-snakecase
+  - r-here
+  - r-yaml
+  - r-optparse
+  - r-digest
+  - r-sessioninfo
+  - r-testthat
+  - r-renv
+  - r-randomforest
+  - r-proc
+  # NetMoss2 runtime/build dependencies. The pinned GitHub packages themselves
+  # are installed by scripts/netmoss/install_netmoss2.R.
+  - r-remotes
+  - r-igraph
+  - r-wgcna
+  - r-coin
+  - r-psych
+  - r-reshape2
+  - r-doby
+  - r-ggforce
+  - r-ggpubr
+  - r-rmisc
+  - r-dynamictreecut
+  - r-fastcluster
+  - r-matrixstats
+  - r-jsonlite
+  - r-doparallel
+  - r-foreach
+  - python=3.11
+  - pandas
+  - numpy
+  - scikit-bio

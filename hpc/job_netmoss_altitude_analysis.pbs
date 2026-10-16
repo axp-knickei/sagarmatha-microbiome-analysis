@@ -1,0 +1,38 @@
+#!/bin/bash
+#PBS -N blackice_netmoss_alt
+#PBS -l nodes=1:ppn=4,mem=32gb,walltime=12:00:00
+#PBS -j oe
+#PBS -o logs/blackice_netmoss_altitude_analysis.pbs.log
+
+# Exploratory NetMoss2 comparison of T1/T2/T9/T10 with T3-T8, followed by
+# scenario-specific publication outputs. Explicit acknowledgement is required:
+# qsub -v NETMOSS_ALTITUDE_ACKNOWLEDGE_EXPLORATORY=YES hpc/job_netmoss_altitude_analysis.pbs
+
+set -euo pipefail
+cd "${PBS_O_WORKDIR:-$PWD}"
+mkdir -p logs results/netmoss_altitude
+source hpc/netmoss_common.sh
+print_netmoss_job_context
+setup_netmoss_conda
+
+if [ "${NETMOSS_ALTITUDE_ACKNOWLEDGE_EXPLORATORY:-NO}" != "YES" ]; then
+  echo "ERROR: the altitude contrast is exploratory and network-unstable." >&2
+  echo "Review docs/netmoss-methods.md, then resubmit with acknowledgement." >&2
+  exit 2
+fi
+
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
+export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
+export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
+
+read -r -a rscript_cmd <<<"${NETMOSS_RSCRIPT}"
+"${rscript_cmd[@]}" scripts/netmoss/validate_environment.R --require-netmoss
+"${rscript_cmd[@]}" scripts/netmoss/run_netmoss_pipeline.R \
+  --config config/netmoss_altitude_analysis.yml \
+  --acknowledge-exploratory \
+  --force
+"${rscript_cmd[@]}" scripts/netmoss/create_publication_outputs.R \
+  --config config/netmoss_altitude_analysis.yml \
+  --force
+
+echo "Exploratory altitude-contrast NetMoss job completed: $(date)"

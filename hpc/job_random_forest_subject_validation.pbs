@@ -1,0 +1,49 @@
+#!/bin/bash
+#PBS -N blackice_rf_subject_validation
+#PBS -l nodes=1:ppn=1
+#PBS -l mem=8gb
+#PBS -l walltime=12:00:00
+#PBS -j oe
+#PBS -o logs/blackice_rf_subject_validation.pbs.log
+
+set -euo pipefail
+cd "${PBS_O_WORKDIR:-$PWD}"
+mkdir -p logs results/random_forest_subject_validation
+
+CONDA_MODULE="${CONDA_MODULE_NAME:-intelpython/2022.2.0}"
+if command -v module >/dev/null 2>&1; then
+  module purge || true
+  module load "$CONDA_MODULE"
+fi
+if ! command -v conda >/dev/null 2>&1; then
+  for profile in "$HOME/miniconda3/etc/profile.d/conda.sh" "$HOME/anaconda3/etc/profile.d/conda.sh" "$HOME/mambaforge/etc/profile.d/conda.sh" "$HOME/miniforge3/etc/profile.d/conda.sh"; do
+    if [ -f "$profile" ]; then source "$profile"; break; fi
+  done
+fi
+command -v conda >/dev/null 2>&1 || { echo "ERROR: conda unavailable" >&2; exit 1; }
+
+MODE="${RF_VALIDATION_MODE:-production}"
+RUN_ID="${RF_VALIDATION_RUN_ID:-${MODE}_${PBS_JOBID:-$(date +%Y%m%d_%H%M%S)}}"
+CONDA_ENV="${CONDA_ENV_NAME:-glmm-hpc}"
+export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
+JOB_LOG="logs/random_forest_subject_validation.${RUN_ID}.log"
+exec > >(tee -a "$JOB_LOG") 2>&1
+
+echo "Started: $(date)"
+echo "Mode: $MODE"
+echo "Run ID: $RUN_ID"
+echo "Git: $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+echo "Config: config/random_forest_subject_validation.yml"
+conda run --no-capture-output -n "$CONDA_ENV" Rscript --version
+conda run --no-capture-output -n "$CONDA_ENV" Rscript -e \
+  'required <- c("dplyr","tidyr","yaml","randomForest","ggplot2"); missing <- required[!vapply(required, requireNamespace, logical(1), quietly=TRUE)]; if(length(missing)) stop("Missing R packages: ", paste(missing, collapse=", "))'
+test -r data/processed/cleaned_data.rds || { echo "ERROR: processed input is missing" >&2; exit 1; }
+if [ -x /usr/bin/time ]; then
+  /usr/bin/time -v conda run --no-capture-output -n "$CONDA_ENV" Rscript \
+    analysis/random_forest_subject_validation/run_random_forest_subject_validation.R "$MODE" "$RUN_ID"
+else
+  conda run --no-capture-output -n "$CONDA_ENV" Rscript \
+    analysis/random_forest_subject_validation/run_random_forest_subject_validation.R "$MODE" "$RUN_ID"
+fi
+echo "Completed: $(date)"
+echo "Output: results/random_forest_subject_validation/$RUN_ID"

@@ -1,0 +1,61 @@
+project:
+  name: "Sagarmatha microbiome analysis — functional community dynamics"
+  decision_date: "2026-08-12"
+
+inputs:
+  abundance_file: "data/raw/gut.csv"
+  metadata_file: "data/raw/sample_info.csv"
+  mag_functional_results_dir: "results/mag_functional_annotation"
+
+input_environment_overrides:
+  abundance_file: "FUNCDYN_ABUNDANCE_FILE"
+  metadata_file: "FUNCDYN_METADATA_FILE"
+  mag_functional_results_dir: "FUNCDYN_MAGFUNC_RESULTS_DIR"
+
+columns:
+  sample_id: "sampleID"
+  subject_id: "group"
+  timepoint: "Timepoint"
+  date: "date"
+
+analysis:
+  excluded_timepoints: ["Ta", "Tb"]
+  ordered_timepoints: ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10"]
+  expected_sample_count: 86
+  enforce_expected_sample_count: true
+  minimum_feature_prevalence: 0.05
+  minimum_features_per_layer: 2
+  permutation_count: 9999
+  smoke_permutation_count: 99
+  random_seed: 20260812
+  fdr_method: "BH"
+  fdr_threshold: 0.05
+  primary_layer: "KO"
+  primary_metric: "hellinger"
+  functional_layers:
+    - id: "KO"
+      role: "primary"
+      file: "04_longitudinal_functional_potential/predicted_functional_potential_KO.csv.gz"
+    - id: "KEGG_module"
+      role: "sensitivity"
+      file: "04_longitudinal_functional_potential/predicted_functional_potential_KEGG_module.csv.gz"
+    - id: "EC"
+      role: "sensitivity"
+      file: "04_longitudinal_functional_potential/predicted_functional_potential_EC.csv.gz"
+    - id: "COG"
+      role: "descriptive"
+      file: "04_longitudinal_functional_potential/predicted_functional_potential_COG.csv.gz"
+  metrics:
+    - id: "hellinger"
+      role: "primary"
+    - id: "bray_curtis"
+      role: "sensitivity"
+    - id: "aitchison"
+      role: "sensitivity"
+
+outputs:
+  output_dir: "results/functional_community_dynamics"
+  overwrite: false
+  png_dpi: 400
+  figure_width_in: 7.4
+  figure_height_in: 5.4

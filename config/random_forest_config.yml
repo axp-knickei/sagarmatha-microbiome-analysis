@@ -1,0 +1,37 @@
+# Random Forest workflow defaults for sample-level MAG abundance modeling.
+# The script can override every value here from the command line.
+
+data:
+  input: "data/processed/cleaned_data.rds"
+  long_format: true
+  sample_id: "sampleID"
+  subject_id: "Subject"
+  feature_id: "MAG"
+  abundance_value: "Y"
+  response: "altitude"
+
+model:
+  task: "auto"                  # auto, classification, or regression
+  random_seed: 20260707
+  test_fraction: 0.25
+  cv_folds: 5
+  n_trees: 1000
+  mtry_grid: "sqrt,third,all"   # or comma-separated positive integers
+  min_node_size_grid: "1,5,10"
+  threads: 4
+
+features:
+  transform: "log10_pseudocount"
+  pseudocount: 2.074295e-09
+  min_prevalence: 0.10
+  min_mean_abundance: 0
+  max_missing_fraction: 0.20
+  include_covariates: false
+  covariates:
+    - "age"
+    - "gender"
+    - "days_from_baseline_subject"
+
+results:
+  output_dir: "results/random_forest"
+  run_name: ""

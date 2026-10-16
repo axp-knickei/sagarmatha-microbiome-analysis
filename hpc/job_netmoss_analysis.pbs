@@ -1,0 +1,38 @@
+#!/bin/bash
+#PBS -N blackice_netmoss
+#PBS -l nodes=1:ppn=4,mem=32gb,walltime=12:00:00
+#PBS -j oe
+#PBS -o logs/blackice_netmoss_analysis.pbs.log
+
+# Exploratory NetMoss2 run followed by publication-output generation.
+# Explicit acknowledgement is required:
+# qsub -v NETMOSS_ACKNOWLEDGE_EXPLORATORY=YES hpc/job_netmoss_analysis.pbs
+
+set -euo pipefail
+cd "${PBS_O_WORKDIR:-$PWD}"
+mkdir -p logs results/netmoss
+source hpc/netmoss_common.sh
+print_netmoss_job_context
+setup_netmoss_conda
+
+if [ "${NETMOSS_ACKNOWLEDGE_EXPLORATORY:-NO}" != "YES" ]; then
+  echo "ERROR: readiness assessment supports exploratory use only." >&2
+  echo "Resubmit with -v NETMOSS_ACKNOWLEDGE_EXPLORATORY=YES after reviewing docs/netmoss-methods.md." >&2
+  exit 2
+fi
+
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
+export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
+export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
+
+read -r -a rscript_cmd <<<"${NETMOSS_RSCRIPT}"
+"${rscript_cmd[@]}" scripts/netmoss/validate_environment.R --require-netmoss
+"${rscript_cmd[@]}" scripts/netmoss/run_netmoss_pipeline.R \
+  --config config/netmoss_analysis.yml \
+  --acknowledge-exploratory \
+  --force
+"${rscript_cmd[@]}" scripts/netmoss/create_publication_outputs.R \
+  --config config/netmoss_analysis.yml \
+  --force
+
+echo "Exploratory NetMoss job completed: $(date)"

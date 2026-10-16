@@ -1,0 +1,49 @@
+project:
+  name: "Sagarmatha microbiome analysis — matched-timepoint NetMoss companion analysis"
+  analysis_status: "exploratory_companion_not_netmoss"
+
+inputs:
+  abundance_file: "data/raw/gut.csv"
+  metadata_file: "data/raw/sample_info.csv"
+  taxonomy_file: "data/raw/GDTB.csv"
+
+columns:
+  sample_id: "sampleID"
+  subject_id: "group"
+  timepoint: "Timepoint"
+  taxonomy_feature_id: "Genome"
+  taxonomy_rank: "genus"
+
+design:
+  timepoint_order: ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10"]
+  excluded_timepoints: ["Ta", "Tb"]
+  enumerate_all_pairs: true
+  matched_participants_only: true
+  minimum_pairs_for_inference: 6
+  minimum_detected_participants: 3
+  netmoss_network_minimum_profiles: 20
+
+transformation:
+  close_to_relative_abundance: true
+  method: "clr"
+  zero_replacement_fraction_of_smallest_positive: 0.5
+
+inference:
+  test: "exact_paired_sign_flip_of_mean_clr_change"
+  multiple_testing_family: "all_testable_genus_by_timepoint_pair_tests"
+  adjustment: "BH"
+  fdr_threshold: 0.05
+  direction_concordance_threshold: 0.75
+  leave_one_out_sign_stability_threshold: 0.80
+  standard_bootstrap_replicates: 1000
+  advanced_bootstrap_replicates: 10000
+  bootstrap_confidence_level: 0.95
+  random_seed: 20260811
+
+execution:
+  default_mode: "advanced"
+  default_threads: 1
+
+outputs:
+  output_dir: "results/netmoss_matched_timepoint_companion"
+  overwrite: false

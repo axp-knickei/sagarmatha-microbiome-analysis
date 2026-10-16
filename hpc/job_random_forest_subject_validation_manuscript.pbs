@@ -1,0 +1,94 @@
+#!/bin/bash
+#PBS -N blackice_rf_ms
+#PBS -l nodes=1:ppn=1,mem=8gb,walltime=01:00:00
+#PBS -j oe
+#PBS -o blackice_random_forest_subject_validation_manuscript.pbs.log
+
+# OpenPBS post-processing wrapper for the subject-aware Random Forest
+# manuscript figure and tables. Submit from the repository root after the
+# selected subject-validation run has completed successfully:
+#   qsub -v RFMS_RUN_DIR=results/random_forest_subject_validation/<run-id> \
+#     hpc/job_random_forest_subject_validation_manuscript.pbs
+# Optional replacement of this run's manuscript outputs only:
+#   qsub -v RFMS_RUN_DIR=results/random_forest_subject_validation/<run-id>,RFMS_FORCE=1 \
+#     hpc/job_random_forest_subject_validation_manuscript.pbs
+
+set -euo pipefail
+
+cd "${PBS_O_WORKDIR:-$PWD}"
+mkdir -p logs
+RUN_LABEL="${PBS_JOBNAME:-blackice_rf_ms}.${PBS_JOBID:-local}"
+exec > >(tee -a "logs/${RUN_LABEL}.out") 2> >(tee -a "logs/${RUN_LABEL}.err" >&2)
+
+echo "=== BlackICE Random Forest manuscript post-processing started: $(date) ==="
+echo "Host: $(hostname)"
+echo "Working directory: $(pwd)"
+echo "PBS job id: ${PBS_JOBID:-local}"
+echo "Git commit: $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
+export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
+export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
+export VECLIB_MAXIMUM_THREADS="${VECLIB_MAXIMUM_THREADS:-1}"
+
+CONDA_MODULE="${CONDA_MODULE_NAME:-intelpython/2022.2.0}"
+if command -v module >/dev/null 2>&1; then
+  module purge || true
+  if [[ -n "$CONDA_MODULE" ]]; then
+    module load "$CONDA_MODULE"
+  fi
+fi
+
+if ! command -v conda >/dev/null 2>&1; then
+  for conda_profile in \
+    "$HOME/miniconda3/etc/profile.d/conda.sh" \
+    "$HOME/anaconda3/etc/profile.d/conda.sh" \
+    "$HOME/mambaforge/etc/profile.d/conda.sh" \
+    "$HOME/miniforge3/etc/profile.d/conda.sh"
+  do
+    if [[ -f "$conda_profile" ]]; then
+      # shellcheck disable=SC1090
+      source "$conda_profile"
+      break
+    fi
+  done
+fi
+command -v conda >/dev/null 2>&1 || {
+  echo "ERROR: conda was not found. Set CONDA_MODULE_NAME or initialize Conda." >&2
+  exit 1
+}
+
+CONDA_ENV="${CONDA_ENV_NAME:-glmm-hpc}"
+RUN_DIR="${RFMS_RUN_DIR:-}"
+OUTPUT_DIR="${RFMS_OUTPUT_DIR:-}"
+FORCE="${RFMS_FORCE:-0}"
+ALLOW_SMOKE="${RFMS_ALLOW_SMOKE:-0}"
+RUN_ARGS=()
+
+if [[ -n "$RUN_DIR" ]]; then
+  RUN_ARGS+=(--run-dir "$RUN_DIR")
+fi
+if [[ -n "$OUTPUT_DIR" ]]; then
+  RUN_ARGS+=(--output-dir "$OUTPUT_DIR")
+fi
+case "$FORCE" in
+  1|true|TRUE|yes|YES) RUN_ARGS+=(--force) ;;
+  0|false|FALSE|no|NO) ;;
+  *) echo "ERROR: RFMS_FORCE must be 0/1, true/false, or yes/no." >&2; exit 2 ;;
+esac
+case "$ALLOW_SMOKE" in
+  1|true|TRUE|yes|YES) RUN_ARGS+=(--allow-smoke) ;;
+  0|false|FALSE|no|NO) ;;
+  *) echo "ERROR: RFMS_ALLOW_SMOKE must be 0/1, true/false, or yes/no." >&2; exit 2 ;;
+esac
+
+CONDA_RUN=(conda run --no-capture-output -n "$CONDA_ENV")
+echo "Conda environment: $CONDA_ENV"
+echo "Source run: ${RUN_DIR:-newest complete production/development run}"
+echo "Output directory: ${OUTPUT_DIR:-RUN_DIR/manuscript}"
+"${CONDA_RUN[@]}" Rscript -e 'required <- c("ggplot2","gridExtra","scales","svglite","ragg","yaml"); missing <- required[!vapply(required, requireNamespace, logical(1), quietly=TRUE)]; if (length(missing)) stop("Missing R packages: ", paste(missing, collapse=", "), ". Run qsub hpc/update_glmm_env.pbs first.")'
+"${CONDA_RUN[@]}" Rscript \
+  scripts/random_forest_subject_validation/01_build_manuscript_outputs.R \
+  "${RUN_ARGS[@]}"
+
+echo "=== BlackICE Random Forest manuscript post-processing finished: $(date) ==="

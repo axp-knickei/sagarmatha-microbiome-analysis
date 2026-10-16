@@ -1,0 +1,30 @@
+project:
+  name: "Sagarmatha microbiome analysis — NetMoss readiness assessment"
+
+inputs:
+  abundance_file: "data/raw/gut.csv"
+  metadata_file: "data/raw/sample_info.csv"
+  taxonomy_file: "data/raw/GDTB.csv"
+
+columns:
+  sample_id: "auto"
+  subject_id: "auto"
+  timepoint: "auto"
+  date: "auto"
+  altitude: "auto"
+  sex: "auto"
+  age: "auto"
+  taxonomy_feature_id: "auto"
+
+analysis:
+  prevalence_thresholds: [0.05, 0.10, 0.20, 0.30, 0.40, 0.50]
+  detection_threshold: 0
+  preferred_taxonomic_rank: "genus"
+  minimum_group_observations_warning: 20
+  minimum_group_subjects_warning: 20
+  ordered_time_levels: ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10"]
+  excluded_time_levels: ["Ta", "Tb"]
+
+outputs:
+  output_dir: "results/netmoss_readiness"
+  overwrite: false

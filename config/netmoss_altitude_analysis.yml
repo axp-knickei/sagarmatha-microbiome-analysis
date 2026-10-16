@@ -1,0 +1,58 @@
+project:
+  name: "Sagarmatha microbiome analysis — exploratory low/initial versus high-altitude NetMoss2 analysis"
+  analysis_status: "exploratory_supporting_only"
+
+inputs:
+  abundance_file: "data/raw/gut.csv"
+  metadata_file: "data/raw/sample_info.csv"
+  taxonomy_file: "data/raw/GDTB.csv"
+
+columns:
+  sample_id: "sampleID"
+  subject_id: "group"
+  timepoint: "Timepoint"
+  taxonomy_feature_id: "Genome"
+  taxonomy_rank: "genus"
+
+scenario:
+  name: "low_and_initial_reach_vs_high_altitude_exploratory"
+  group_a_label: "low_altitude_and_initial_reach"
+  group_a_values: ["T1", "T2", "T9", "T10"]
+  group_b_label: "high_altitude"
+  group_b_values: ["T3", "T4", "T5", "T6", "T7", "T8"]
+  excluded_values: ["Ta", "Tb"]
+
+preprocessing:
+  subject_aggregation: "median"
+  prevalence_threshold: 0.50
+  detection_threshold: 0
+  close_to_relative_abundance: true
+  minimum_samples_per_group: 5
+  minimum_features: 20
+
+network:
+  method: "sparcc"
+  smoke_test_method: "spearman"
+  random_seed: 20260814
+
+netmoss:
+  scaled: true
+  deep_split: 4
+  minimum_module_size: 20
+  soft_power: 5
+  package_repository: "xiaolw95/NetMoss2"
+  package_commit: "79da905efccfc8bec9c08a4f447bf1ddb12223f6"
+
+publication:
+  top_taxa: 30
+  highlight_taxa: 10
+  fdr_threshold: 0.05
+  score_threshold: 0.30
+  edge_threshold: 0.40
+  figure_width_mm: 183
+  figure_height_mm: 160
+  raster_dpi: 600
+
+outputs:
+  output_dir: "results/netmoss_altitude"
+  overwrite: false

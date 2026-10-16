@@ -1,0 +1,105 @@
+#!/bin/bash
+#PBS -N blackice_random_forest
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=32gb
+#PBS -l walltime=12:00:00
+#PBS -j oe
+#PBS -o logs/blackice_random_forest.pbs.log
+
+# OpenPBS wrapper for the subject-aware Random Forest workflow.
+# Submit from the repository root:
+#   qsub hpc/job_random_forest.pbs
+#
+# Lines commonly edited before submission:
+#   - PBS resources above: ppn, mem, walltime
+#   - CONDA_MODULE_NAME / CONDA_ENV_NAME if your cluster uses different names
+#   - RF_RESPONSE if predicting Timepoint or another metadata column
+#   - RF_EXTRA_ARGS for test mode, filters, covariates, or tree count
+
+set -euo pipefail
+
+cd "${PBS_O_WORKDIR:-$PWD}"
+
+mkdir -p logs results/random_forest tmp
+
+RUN_LABEL="${PBS_JOBNAME:-blackice_random_forest}.${PBS_JOBID:-local}"
+exec > >(tee -a "logs/${RUN_LABEL}.out") 2> >(tee -a "logs/${RUN_LABEL}.err" >&2)
+
+echo "=== BlackICE Random Forest job started: $(date) ==="
+echo "Host: $(hostname)"
+echo "Working directory: $(pwd)"
+echo "PBS job id: ${PBS_JOBID:-local}"
+echo "Git commit: $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
+export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
+export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
+export VECLIB_MAXIMUM_THREADS="${VECLIB_MAXIMUM_THREADS:-1}"
+
+CONDA_MODULE="${CONDA_MODULE_NAME:-intelpython/2022.2.0}"
+
+if command -v module >/dev/null 2>&1; then
+  module purge || true
+  if [ -n "$CONDA_MODULE" ]; then
+    module load "$CONDA_MODULE"
+  fi
+fi
+
+if ! command -v conda >/dev/null 2>&1; then
+  for conda_profile in \
+    "$HOME/miniconda3/etc/profile.d/conda.sh" \
+    "$HOME/anaconda3/etc/profile.d/conda.sh" \
+    "$HOME/mambaforge/etc/profile.d/conda.sh" \
+    "$HOME/miniforge3/etc/profile.d/conda.sh"
+  do
+    if [ -f "$conda_profile" ]; then
+      # shellcheck disable=SC1090
+      source "$conda_profile"
+      break
+    fi
+  done
+fi
+
+CONDA_ENV="${CONDA_ENV_NAME:-glmm-hpc}"
+if command -v conda >/dev/null 2>&1; then
+  R_CMD=(conda run --no-capture-output -n "$CONDA_ENV" R)
+  RSCRIPT_CMD=(conda run --no-capture-output -n "$CONDA_ENV" Rscript)
+else
+  echo "ERROR: conda command was not found. Set CONDA_MODULE_NAME or install/create the Conda environment first." >&2
+  exit 1
+fi
+
+RF_INPUT="${RF_INPUT:-data/processed/cleaned_data.rds}"
+RF_OUTPUT_DIR="${RF_OUTPUT_DIR:-results/random_forest}"
+RF_RESPONSE="${RF_RESPONSE:-altitude}"
+RF_SUBJECT_COL="${RF_SUBJECT_COL:-Subject}"
+RF_SAMPLE_COL="${RF_SAMPLE_COL:-sampleID}"
+RF_TREES="${RF_TREES:-1000}"
+RF_CV_FOLDS="${RF_CV_FOLDS:-5}"
+RF_THREADS="${RF_THREADS:-${PBS_NUM_PPN:-4}}"
+RF_EXTRA_ARGS="${RF_EXTRA_ARGS:-}"
+
+args=(
+  scripts/run_random_forest_model.R
+  --config config/random_forest_config.yml
+  --input "$RF_INPUT"
+  --output-dir "$RF_OUTPUT_DIR"
+  --response-variable "$RF_RESPONSE"
+  --subject-id-column "$RF_SUBJECT_COL"
+  --sample-id-column "$RF_SAMPLE_COL"
+  --n-trees "$RF_TREES"
+  --cv-folds "$RF_CV_FOLDS"
+  --threads "$RF_THREADS"
+)
+
+echo "R version: $("${R_CMD[@]}" --version | head -1)"
+echo "Conda environment: $CONDA_ENV"
+echo "Input: $RF_INPUT"
+echo "Output base: $RF_OUTPUT_DIR"
+echo "Response: $RF_RESPONSE"
+echo "Command: Rscript ${args[*]} $RF_EXTRA_ARGS"
+
+# shellcheck disable=SC2086
+"${RSCRIPT_CMD[@]}" "${args[@]}" $RF_EXTRA_ARGS
+
+echo "=== BlackICE Random Forest job finished: $(date) ==="

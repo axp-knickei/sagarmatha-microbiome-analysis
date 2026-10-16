@@ -1,0 +1,105 @@
+#!/bin/bash
+#PBS -N blackice_rf_feat
+#PBS -l nodes=1:ppn=1,mem=8gb,walltime=00:30:00
+#PBS -j oe
+#PBS -o blackice_random_forest_feature_stability.pbs.log
+
+# OpenPBS post-processing wrapper for the Random Forest MAG eligibility,
+# importance, and rank-stability figure. Submit from the repository root:
+#   qsub hpc/job_plot_random_forest_feature_stability.pbs
+# Optional path overrides use RF_FEATURE_RESULTS_DIR, RF_FEATURE_TAXONOMY_FILE,
+# RF_FEATURE_OUTPUT_DIR, RF_FEATURE_N_CANDIDATES, and RF_FEATURE_OUTPUT_PREFIX.
+
+set -euo pipefail
+
+cd "${PBS_O_WORKDIR:-$PWD}"
+test -f scripts/plot_random_forest_feature_stability.R || {
+  echo "ERROR: submit this job from the sagarmatha-microbiome-analysis repository root." >&2
+  exit 1
+}
+
+mkdir -p logs/random_forest_feature_stability
+RUN_LABEL="${PBS_JOBNAME:-blackice_rf_feat}.${PBS_JOBID:-local}"
+exec > >(tee -a "logs/random_forest_feature_stability/${RUN_LABEL}.out") \
+     2> >(tee -a "logs/random_forest_feature_stability/${RUN_LABEL}.err" >&2)
+
+echo "=== Random Forest MAG feature-stability plotting started: $(date) ==="
+echo "Host: $(hostname)"
+echo "Working directory: $(pwd)"
+echo "PBS job id: ${PBS_JOBID:-local}"
+echo "Git commit: $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
+export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
+export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
+export VECLIB_MAXIMUM_THREADS="${VECLIB_MAXIMUM_THREADS:-1}"
+
+CONDA_MODULE="${CONDA_MODULE_NAME:-intelpython/2022.2.0}"
+module purge || true
+module load "${CONDA_MODULE}"
+
+if ! command -v conda >/dev/null 2>&1; then
+  for conda_profile in \
+    "$HOME/miniconda3/etc/profile.d/conda.sh" \
+    "$HOME/anaconda3/etc/profile.d/conda.sh" \
+    "$HOME/mambaforge/etc/profile.d/conda.sh" \
+    "$HOME/miniforge3/etc/profile.d/conda.sh"
+  do
+    if [[ -f "$conda_profile" ]]; then
+      # shellcheck disable=SC1090
+      source "$conda_profile"
+      break
+    fi
+  done
+fi
+command -v conda >/dev/null 2>&1 || {
+  echo "ERROR: conda was not found after loading ${CONDA_MODULE}." >&2
+  exit 1
+}
+
+CONDA_ENV="${CONDA_ENV_NAME:-glmm-hpc}"
+FEATURE_DIR="${RF_FEATURE_RESULTS_DIR:-results/random_forest_subject_validation/development_20260724_150733/features}"
+TAXONOMY_FILE="${RF_FEATURE_TAXONOMY_FILE:-data/raw/GDTB.csv}"
+OUTPUT_DIR="${RF_FEATURE_OUTPUT_DIR:-results/random_forest_subject_validation/development_20260724_150733/figures/feature_stability}"
+N_CANDIDATES="${RF_FEATURE_N_CANDIDATES:-20}"
+OUTPUT_PREFIX="${RF_FEATURE_OUTPUT_PREFIX:-}"
+CONDA_RUN=(conda run --no-capture-output -n "$CONDA_ENV")
+
+echo "Conda module: $CONDA_MODULE"
+echo "Conda environment: $CONDA_ENV"
+echo "Feature-results directory: $FEATURE_DIR"
+echo "Taxonomy file: $TAXONOMY_FILE"
+echo "Output directory: $OUTPUT_DIR"
+echo "Candidate count: $N_CANDIDATES"
+"${CONDA_RUN[@]}" Rscript --version
+"${CONDA_RUN[@]}" Rscript -e 'cat("Active CONDA_PREFIX: ", Sys.getenv("CONDA_PREFIX"), "\n", sep=""); cat("R: ", R.version.string, "\n", sep="")'
+"${CONDA_RUN[@]}" Rscript -e 'required <- c("dplyr","ggplot2","gridExtra","ragg","scales","svglite","viridisLite","yaml"); missing <- required[!vapply(required, requireNamespace, logical(1), quietly=TRUE)]; if (length(missing)) stop("Missing R packages in active environment: ", paste(missing, collapse=", "), ". Use the repository environment-update job on a compute node.")'
+
+RUN_ARGS=(
+  --feature-results-dir "$FEATURE_DIR"
+  --taxonomy-file "$TAXONOMY_FILE"
+  --output-dir "$OUTPUT_DIR"
+  --n-candidates "$N_CANDIDATES"
+)
+if [[ -n "$OUTPUT_PREFIX" ]]; then
+  RUN_ARGS+=(--output-prefix "$OUTPUT_PREFIX")
+fi
+
+"${CONDA_RUN[@]}" Rscript scripts/plot_random_forest_feature_stability.R "${RUN_ARGS[@]}"
+
+COMBINED_PDF="$OUTPUT_DIR/${OUTPUT_PREFIX:+${OUTPUT_PREFIX}_}figure_RF_MAG_feature_stability_ABCD.pdf"
+PREVIEW_STEM="$OUTPUT_DIR/${OUTPUT_PREFIX:+${OUTPUT_PREFIX}_}figure_RF_MAG_feature_stability_ABCD_pdf_preview"
+if command -v pdftoppm >/dev/null 2>&1; then
+  pdftoppm -f 1 -singlefile -png -r 180 "$COMBINED_PDF" "$PREVIEW_STEM"
+  echo "Rendered PDF preview: ${PREVIEW_STEM}.png"
+elif command -v gs >/dev/null 2>&1; then
+  gs -q -dSAFER -dBATCH -dNOPAUSE -sDEVICE=pngalpha -r180 \
+    -dFirstPage=1 -dLastPage=1 -sOutputFile="${PREVIEW_STEM}.png" "$COMBINED_PDF"
+  echo "Rendered PDF preview with Ghostscript: ${PREVIEW_STEM}.png"
+else
+  echo "WARNING: pdftoppm and Ghostscript are unavailable; inspect the directly rendered combined PNG."
+fi
+
+echo "Generated outputs and sizes:"
+find "$OUTPUT_DIR" -maxdepth 1 -type f -exec ls -lh {} \;
+echo "=== Random Forest MAG feature-stability plotting finished: $(date) ==="

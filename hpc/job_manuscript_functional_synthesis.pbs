@@ -1,0 +1,55 @@
+#!/bin/bash
+#PBS -N blackice_mansyn
+#PBS -l nodes=1:ppn=1,mem=16gb,walltime=02:00:00
+#PBS -j oe
+#PBS -o blackice_manuscript_functional_synthesis.pbs.log
+
+# OpenPBS wrapper for the manuscript functional synthesis. Submit from the
+# repository root after both source workflows have completed successfully.
+
+set -euo pipefail
+cd "${PBS_O_WORKDIR:-$PWD}"
+mkdir -p logs
+RUN_LABEL="${PBS_JOBNAME:-blackice_mansyn}.${PBS_JOBID:-local}"
+exec > >(tee -a "logs/${RUN_LABEL}.out") 2> >(tee -a "logs/${RUN_LABEL}.err" >&2)
+
+echo "=== BlackICE manuscript functional synthesis started: $(date) ==="
+echo "Host: $(hostname)"
+echo "Working directory: $(pwd)"
+echo "PBS job id: ${PBS_JOBID:-local}"
+echo "Git commit: $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
+export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
+export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
+
+CONDA_MODULE="${CONDA_MODULE_NAME:-intelpython/2022.2.0}"
+if command -v module >/dev/null 2>&1; then
+  module purge || true
+  [[ -z "$CONDA_MODULE" ]] || module load "$CONDA_MODULE"
+fi
+if ! command -v conda >/dev/null 2>&1; then
+  for conda_profile in "$HOME/miniconda3/etc/profile.d/conda.sh" "$HOME/anaconda3/etc/profile.d/conda.sh" "$HOME/mambaforge/etc/profile.d/conda.sh" "$HOME/miniforge3/etc/profile.d/conda.sh"; do
+    if [[ -f "$conda_profile" ]]; then source "$conda_profile"; break; fi
+  done
+fi
+command -v conda >/dev/null 2>&1 || { echo "ERROR: conda was not found." >&2; exit 1; }
+
+CONDA_ENV="${CONDA_ENV_NAME:-glmm-hpc}"
+CONFIG="${MANSYN_CONFIG:-config/manuscript_functional_synthesis.yml}"
+FORCE="${MANSYN_FORCE:-0}"
+CONDA_RUN=(conda run --no-capture-output -n "$CONDA_ENV")
+
+echo "Configuration: $CONFIG"
+echo "Source workflows: MAG functional annotation and functional community dynamics"
+echo "Interpretation: predicted genomic potential, not expression or activity"
+"${CONDA_RUN[@]}" Rscript scripts/validate_manuscript_functional_synthesis_environment.R
+
+RUN_ARGS=(--config "$CONFIG")
+case "$FORCE" in
+  1|true|TRUE|yes|YES) RUN_ARGS+=(--force) ;;
+  0|false|FALSE|no|NO) ;;
+  *) echo "ERROR: MANSYN_FORCE must be 0/1, true/false, or yes/no." >&2; exit 2 ;;
+esac
+"${CONDA_RUN[@]}" bash scripts/run_manuscript_functional_synthesis.sh "${RUN_ARGS[@]}"
+echo "=== BlackICE manuscript functional synthesis finished: $(date) ==="

@@ -1,0 +1,79 @@
+#!/bin/bash
+#PBS -N blackice_divmag_ms
+#PBS -l nodes=1:ppn=1,mem=16gb,walltime=02:00:00
+#PBS -j oe
+#PBS -o blackice_manuscript_diversity_per_mag.pbs.log
+
+# OpenPBS post-processing wrapper for the combined alpha-diversity,
+# beta-diversity, and primary per-MAG manuscript figures and tables.
+# Submit from the repository root after all three source analyses are present:
+#   qsub hpc/job_manuscript_diversity_per_mag.pbs
+# Optional replacement of this workflow's prior outputs only:
+#   qsub -v DIVMAG_FORCE=1 hpc/job_manuscript_diversity_per_mag.pbs
+
+set -euo pipefail
+
+cd "${PBS_O_WORKDIR:-$PWD}"
+mkdir -p logs
+RUN_LABEL="${PBS_JOBNAME:-blackice_divmag_ms}.${PBS_JOBID:-local}"
+exec > >(tee -a "logs/${RUN_LABEL}.out") 2> >(tee -a "logs/${RUN_LABEL}.err" >&2)
+
+echo "=== BlackICE diversity/per-MAG manuscript synthesis started: $(date) ==="
+echo "Host: $(hostname)"
+echo "Working directory: $(pwd)"
+echo "PBS job id: ${PBS_JOBID:-local}"
+echo "Git commit: $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
+export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
+export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
+export VECLIB_MAXIMUM_THREADS="${VECLIB_MAXIMUM_THREADS:-1}"
+
+CONDA_MODULE="${CONDA_MODULE_NAME:-intelpython/2022.2.0}"
+if command -v module >/dev/null 2>&1; then
+  module purge || true
+  if [[ -n "$CONDA_MODULE" ]]; then
+    module load "$CONDA_MODULE"
+  fi
+fi
+
+if ! command -v conda >/dev/null 2>&1; then
+  for conda_profile in \
+    "$HOME/miniconda3/etc/profile.d/conda.sh" \
+    "$HOME/anaconda3/etc/profile.d/conda.sh" \
+    "$HOME/mambaforge/etc/profile.d/conda.sh" \
+    "$HOME/miniforge3/etc/profile.d/conda.sh"
+  do
+    if [[ -f "$conda_profile" ]]; then
+      # shellcheck disable=SC1090
+      source "$conda_profile"
+      break
+    fi
+  done
+fi
+command -v conda >/dev/null 2>&1 || {
+  echo "ERROR: conda was not found. Set CONDA_MODULE_NAME or initialize Conda." >&2
+  exit 1
+}
+
+CONDA_ENV="${CONDA_ENV_NAME:-glmm-hpc}"
+OUTPUT_DIR="${DIVMAG_OUTPUT_DIR:-results/manuscript_diversity_per_mag}"
+FORCE="${DIVMAG_FORCE:-0}"
+export BLACKICE_RAW_DATA_DIR="${BLACKICE_RAW_DATA_DIR:-data/raw}"
+export BLACKICE_PROCESSED_DATA_DIR="${BLACKICE_PROCESSED_DATA_DIR:-data/processed}"
+RUN_ARGS=(--output-dir "$OUTPUT_DIR")
+case "$FORCE" in
+  1|true|TRUE|yes|YES) RUN_ARGS+=(--force) ;;
+  0|false|FALSE|no|NO) ;;
+  *) echo "ERROR: DIVMAG_FORCE must be 0/1, true/false, or yes/no." >&2; exit 2 ;;
+esac
+
+CONDA_RUN=(conda run --no-capture-output -n "$CONDA_ENV")
+echo "Conda environment: $CONDA_ENV"
+echo "Output directory: $OUTPUT_DIR"
+echo "Raw-data directory: $BLACKICE_RAW_DATA_DIR"
+echo "Processed-data directory: $BLACKICE_PROCESSED_DATA_DIR"
+"${CONDA_RUN[@]}" Rscript -e 'required <- c("dplyr","tidyr","readr","ggplot2","patchwork","gridExtra","scales","svglite","ragg","lme4","yaml","knitr"); missing <- required[!vapply(required, requireNamespace, logical(1), quietly=TRUE)]; if (length(missing)) stop("Missing R packages: ", paste(missing, collapse=", "))'
+"${CONDA_RUN[@]}" Rscript scripts/manuscript_diversity_per_mag/01_build_main_figures_tables.R "${RUN_ARGS[@]}"
+
+echo "=== BlackICE diversity/per-MAG manuscript synthesis finished: $(date) ==="

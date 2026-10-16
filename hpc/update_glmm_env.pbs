@@ -1,0 +1,36 @@
+#!/bin/bash
+#PBS -N blackice_update_env
+#PBS -l nodes=1:ppn=1,mem=8gb,walltime=02:00:00
+#PBS -j oe
+#PBS -o update_glmm_env.log
+
+# Update the existing project Conda environment on Nebula.
+# Submit from the repository root:
+#   qsub hpc/update_glmm_env.pbs
+
+set -euo pipefail
+
+CONDA_ENV="${CONDA_ENV_NAME:-glmm-hpc}"
+CONDA_MODULE="${CONDA_MODULE_NAME:-intelpython/2022.2.0}"
+
+cd "${PBS_O_WORKDIR:-$PWD}"
+
+module purge || true
+module load "${CONDA_MODULE}"
+
+echo "=== Environment update started: $(date) ==="
+echo "Host: $(hostname)"
+echo "Working directory: $(pwd)"
+echo "Conda module: ${CONDA_MODULE}"
+echo "Conda environment: ${CONDA_ENV}"
+echo "Git commit: $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+
+test -f environment.yml || {
+  echo "ERROR: environment.yml not found; submit this job from the repository root." >&2
+  exit 1
+}
+
+conda env update -n "${CONDA_ENV}" -f environment.yml --prune
+conda run -n "${CONDA_ENV}" bash scripts/validate_beta_diversity_environment.sh
+
+echo "=== Environment update completed: $(date) ==="

@@ -1,0 +1,83 @@
+#!/bin/bash
+#PBS -N blackice_magfunc
+#PBS -l nodes=1:ppn=8,mem=128gb,walltime=48:00:00
+#PBS -j oe
+#PBS -o blackice_mag_functional_annotation.pbs.log
+
+# OpenPBS wrapper for the complete MAG functional annotation workflow.
+# Submit from the repository root after placing the full raw files on Nebula:
+#   qsub hpc/job_mag_functional_annotation.pbs
+#
+# Path overrides keep private Nebula locations out of Git:
+#   qsub -v MAGFUNC_CLUSTER_FILE=/path/cluster.tsv,MAGFUNC_ANNOTATION_FILE=/path/annotations.tsv hpc/job_mag_functional_annotation.pbs
+#
+# Restart or bounded-stage overrides:
+#   qsub -v MAGFUNC_FROM_STAGE=10,MAGFUNC_TO_STAGE=10 hpc/job_mag_functional_annotation.pbs
+#   qsub -v MAGFUNC_FORCE=1 hpc/job_mag_functional_annotation.pbs
+
+set -euo pipefail
+cd "${PBS_O_WORKDIR:-$PWD}"
+
+mkdir -p logs
+RUN_LABEL="${PBS_JOBNAME:-blackice_magfunc}.${PBS_JOBID:-local}"
+exec > >(tee -a "logs/${RUN_LABEL}.out") 2> >(tee -a "logs/${RUN_LABEL}.err" >&2)
+
+echo "=== BlackICE MAG functional annotation started: $(date) ==="
+echo "Host: $(hostname)"
+echo "Working directory: $(pwd)"
+echo "PBS job id: ${PBS_JOBID:-local}"
+echo "Git commit: $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
+export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
+export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
+export VECLIB_MAXIMUM_THREADS="${VECLIB_MAXIMUM_THREADS:-1}"
+export MAGFUNC_THREADS="${MAGFUNC_THREADS:-${PBS_NP:-8}}"
+
+CONDA_MODULE="${CONDA_MODULE_NAME:-intelpython/2022.2.0}"
+if command -v module >/dev/null 2>&1; then
+  module purge || true
+  [[ -z "$CONDA_MODULE" ]] || module load "$CONDA_MODULE"
+fi
+
+if ! command -v conda >/dev/null 2>&1; then
+  for conda_profile in \
+    "$HOME/miniconda3/etc/profile.d/conda.sh" \
+    "$HOME/anaconda3/etc/profile.d/conda.sh" \
+    "$HOME/mambaforge/etc/profile.d/conda.sh" \
+    "$HOME/miniforge3/etc/profile.d/conda.sh"
+  do
+    if [[ -f "$conda_profile" ]]; then
+      # shellcheck disable=SC1090
+      source "$conda_profile"
+      break
+    fi
+  done
+fi
+command -v conda >/dev/null 2>&1 || { echo "ERROR: conda was not found." >&2; exit 1; }
+
+CONDA_ENV="${CONDA_ENV_NAME:-glmm-hpc}"
+CONFIG="${MAGFUNC_CONFIG:-config/mag_functional_annotation.yml}"
+FROM_STAGE="${MAGFUNC_FROM_STAGE:-0}"
+TO_STAGE="${MAGFUNC_TO_STAGE:-10}"
+FORCE="${MAGFUNC_FORCE:-0}"
+test -f "$CONFIG" || { echo "ERROR: configuration not found: $CONFIG" >&2; exit 1; }
+
+CONDA_RUN=(conda run --no-capture-output -n "$CONDA_ENV")
+echo "Conda environment: $CONDA_ENV"
+echo "Configuration: $CONFIG"
+echo "Stages: $FROM_STAGE through $TO_STAGE"
+echo "Worker processes: $MAGFUNC_THREADS"
+echo "gut.csv row normalization: none (fixed scientific decision)"
+echo "Excluded timepoints: Ta,Tb (fixed scientific decision)"
+
+"${CONDA_RUN[@]}" Rscript scripts/validate_mag_functional_annotation_environment.R
+RUN_ARGS=(--config "$CONFIG" --from-stage "$FROM_STAGE" --to-stage "$TO_STAGE")
+case "$FORCE" in
+  1|true|TRUE|yes|YES) RUN_ARGS+=(--force) ;;
+  0|false|FALSE|no|NO) ;;
+  *) echo "ERROR: MAGFUNC_FORCE must be 0/1, true/false, or yes/no." >&2; exit 2 ;;
+esac
+"${CONDA_RUN[@]}" bash scripts/run_mag_functional_annotation.sh "${RUN_ARGS[@]}"
+
+echo "=== BlackICE MAG functional annotation finished: $(date) ==="

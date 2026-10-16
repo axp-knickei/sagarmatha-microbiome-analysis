@@ -1,0 +1,99 @@
+#!/bin/bash
+#PBS -N blackice_class1_window_lmm
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=16gb
+#PBS -l walltime=24:00:00
+#PBS -j oe
+#PBS -o logs/blackice_class1_window_lmm.pbs.log
+
+# OpenPBS wrapper for the Class 1 predefined-window per-MAG lmerTest workflow.
+# Submit from the repository root:
+#   qsub hpc/job_class1_window_lmertest.pbs
+#
+# Useful overrides:
+#   qsub -v RUN_MODE=test hpc/job_class1_window_lmertest.pbs
+#   qsub -v CONDA_MODULE_NAME=intelpython/2022.2.0,CONDA_ENV_NAME=glmm-hpc hpc/job_class1_window_lmertest.pbs
+
+set -euo pipefail
+
+cd "${PBS_O_WORKDIR:-$PWD}"
+
+mkdir -p logs results/class1_window_lmertest tmp
+
+RUN_LABEL="${PBS_JOBNAME:-blackice_class1_window_lmm}.${PBS_JOBID:-local}"
+exec > >(tee -a "logs/${RUN_LABEL}.out") 2> >(tee -a "logs/${RUN_LABEL}.err" >&2)
+
+echo "=== BlackICE Class 1 window LMM job started: $(date) ==="
+echo "Host: $(hostname)"
+echo "Working directory: $(pwd)"
+echo "PBS job id: ${PBS_JOBID:-local}"
+echo "Git commit: $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
+export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
+export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
+export VECLIB_MAXIMUM_THREADS="${VECLIB_MAXIMUM_THREADS:-1}"
+
+CONDA_MODULE="${CONDA_MODULE_NAME:-intelpython/2022.2.0}"
+
+if command -v module >/dev/null 2>&1; then
+  module purge || true
+  if [ -n "$CONDA_MODULE" ]; then
+    module load "$CONDA_MODULE"
+  fi
+fi
+
+if ! command -v conda >/dev/null 2>&1; then
+  for conda_profile in \
+    "$HOME/miniconda3/etc/profile.d/conda.sh" \
+    "$HOME/anaconda3/etc/profile.d/conda.sh" \
+    "$HOME/mambaforge/etc/profile.d/conda.sh" \
+    "$HOME/miniforge3/etc/profile.d/conda.sh"
+  do
+    if [ -f "$conda_profile" ]; then
+      # shellcheck disable=SC1090
+      source "$conda_profile"
+      break
+    fi
+  done
+fi
+
+CONDA_ENV="${CONDA_ENV_NAME:-glmm-hpc}"
+if command -v conda >/dev/null 2>&1; then
+  R_CMD=(conda run --no-capture-output -n "$CONDA_ENV" R)
+  RSCRIPT_CMD=(conda run --no-capture-output -n "$CONDA_ENV" Rscript)
+else
+  echo "ERROR: conda command was not found. Set CONDA_MODULE_NAME or install/create the Conda environment first." >&2
+  exit 1
+fi
+
+RUN_MODE="${RUN_MODE:-full}"
+INPUT_PATH="${BLACKICE_INPUT:-data/processed/cleaned_data.rds}"
+WINDOWS_PATH="${BLACKICE_CLASS1_WINDOWS:-results/metadata_expedition_windows/proposed_biological_windows.csv}"
+OUTPUT_DIR="${BLACKICE_CLASS1_OUTPUT_DIR:-results/class1_window_lmertest}"
+
+args=(
+  scripts/hpc_run_class1_window_lmertest.R
+  --input "$INPUT_PATH"
+  --windows-csv "$WINDOWS_PATH"
+  --output-dir "$OUTPUT_DIR"
+)
+
+if [ "$RUN_MODE" = "test" ]; then
+  args+=(--test)
+elif [ "$RUN_MODE" != "full" ]; then
+  echo "ERROR: RUN_MODE must be 'test' or 'full'." >&2
+  exit 1
+fi
+
+echo "R version: $("${R_CMD[@]}" --version | head -1)"
+echo "Conda environment: $CONDA_ENV"
+echo "Run mode: $RUN_MODE"
+echo "Input: $INPUT_PATH"
+echo "Windows: $WINDOWS_PATH"
+echo "Output: $OUTPUT_DIR"
+echo "Command: Rscript ${args[*]}"
+
+"${RSCRIPT_CMD[@]}" "${args[@]}"
+
+echo "=== BlackICE Class 1 window LMM job finished: $(date) ==="

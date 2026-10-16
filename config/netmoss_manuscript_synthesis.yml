@@ -1,0 +1,30 @@
+project:
+  name: "Sagarmatha microbiome analysis — NetMoss manuscript synthesis"
+  analysis_status: "historical_exploratory_supporting_only"
+
+inputs:
+  netmoss_results_dir: "results/netmoss"
+  gut_abundance_file: "data/raw/gut.csv"
+  taxonomy_file: "data/raw/GDTB.csv"
+
+input_environment_overrides:
+  netmoss_results_dir: "NETMOSS_MANUSCRIPT_INPUT_DIR"
+  gut_abundance_file: "NETMOSS_MANUSCRIPT_GUT_FILE"
+  taxonomy_file: "NETMOSS_MANUSCRIPT_TAXONOMY_FILE"
+
+figure:
+  score_threshold: 0.30
+  fdr_threshold: 0.05
+  retained_edge_threshold: 0.40
+  context_edge_threshold: 0.25
+  top_taxa_ranked_panel: 20
+  top_taxa_table: 10
+  top_taxa_network_labels: 10
+  random_seed: 20260714
+  width_mm: 183
+  height_mm: 180
+  dpi: 600
+
+outputs:
+  output_dir: "results/netmoss/manuscript_synthesis"
+  overwrite: false

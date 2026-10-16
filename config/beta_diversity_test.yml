@@ -1,0 +1,50 @@
+project:
+  name: "Sagarmatha microbiome analysis — beta-diversity smoke test"
+inputs:
+  abundance_file: "data/test_beta_diversity/gut_test.csv"
+  metadata_file: "data/test_beta_diversity/sample_info_test.csv"
+  taxonomy_file: "data/test_beta_diversity/GDTB_test.csv"
+  tree_file: null
+columns:
+  sample_id: "sampleID"
+  subject_id: "group"
+  taxonomy_feature_id: "Genome"
+  primary_group: "Timepoint"
+  time: "date"
+  timepoint: "Timepoint"
+  ordered_time_levels: ["T2", "T3", "T7", "T10"]
+  additional_covariates: ["age", "gender"]
+  batch_variables: []
+data:
+  abundance_scale: "relative_abundance_like"
+  minimum_sample_library_size: 0
+  minimum_mag_prevalence: 0.05
+  sensitivity_prevalence: [0.05, 0.10]
+  minimum_total_abundance: 0
+  detection_threshold: 0
+  detection_threshold_sensitivity: [0, 0.000001]
+  bray_square_root: true
+  zero_handling_method: "multiplicative_replacement"
+  zero_replacement_fraction: 0.65
+  pseudocount: null
+analysis:
+  metrics: ["bray_curtis", "jaccard_binary", "quantitative_jaccard_ruzička", "euclidean_hellinger", "aitchison", "unweighted_unifrac", "weighted_unifrac", "generalized_unifrac_alpha_0", "generalized_unifrac_alpha_0.5", "generalized_unifrac_alpha_1"]
+  primary_metrics: ["bray_curtis", "jaccard_binary", "aitchison"]
+  generalized_unifrac_alpha: [0, 0.5, 1]
+  permutation_count: 9999
+  smoke_test_permutations: 99
+  permutation_block: "group"
+  random_seed: 20260711
+  ordination_dimensions: 3
+  nmds_trymax: 20
+  nmds_stress_warning: 0.20
+  primary_formula: "distance ~ subject_id + timepoint"
+  altitude_sensitivity_formula: "distance ~ altitude"
+  run_dbrda: false
+resources:
+  threads: 1
+  memory_gb: 2
+  walltime: "00:20:00"
+outputs:
+  output_dir: "results/beta_diversity_test"
+  overwrite: true

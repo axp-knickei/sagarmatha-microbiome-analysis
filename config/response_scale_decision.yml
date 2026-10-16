@@ -1,0 +1,9 @@
+response_scale:
+  primary: "log10_pseudocount"
+  sensitivity: "raw"
+  pseudocount_rule: "half_smallest_nonzero_Y"
+  pseudocount_value: 2.074295e-09
+  primary_formula: "log10(Y + pseudocount) ~ days_from_baseline_subject + (1 | Subject)"
+  sensitivity_formula: "Y ~ days_from_baseline_subject + (1 | Subject)"
+  decision_status: "working_primary_response_scale"
+  caution: "Top MAG rankings were transformation-sensitive; raw model retained as sensitivity analysis."

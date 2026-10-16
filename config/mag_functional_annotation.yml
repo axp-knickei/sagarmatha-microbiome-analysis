@@ -1,0 +1,168 @@
+project:
+  name: "Sagarmatha microbiome analysis — MAG functional annotation"
+  decision_date: "2026-08-08"
+
+inputs:
+  cluster_file: "data/raw/MAG_gene_original_final_0805_mmseqs_cluster.tsv"
+  annotation_file: "data/raw/MAG_gene_original_final_0805_mmseqs_rep_seq.emapper.annotations.tsv"
+  abundance_file: "data/raw/gut.csv"
+  metadata_file: "data/raw/sample_info.csv"
+  taxonomy_file: "data/raw/GDTB.csv"
+
+input_environment_overrides:
+  cluster_file: "MAGFUNC_CLUSTER_FILE"
+  annotation_file: "MAGFUNC_ANNOTATION_FILE"
+  abundance_file: "MAGFUNC_ABUNDANCE_FILE"
+  metadata_file: "MAGFUNC_METADATA_FILE"
+  taxonomy_file: "MAGFUNC_TAXONOMY_FILE"
+
+columns:
+  sample_id: "sampleID"
+  subject_id: "group"
+  timepoint: "Timepoint"
+  date: "date"
+  altitude: "altitude"
+  taxonomy_mag_id: "Genome"
+  annotation_query: "query"
+
+identifiers:
+  mag_pattern: "^(.+\\.(?:strict|permissive|orig))_.*$"
+  allowed_suffixes: ["strict", "permissive", "orig"]
+  require_all_member_ids_parse: true
+  require_all_parsed_mags_in_taxonomy: true
+  require_all_gut_mags_in_taxonomy: true
+
+quality_control:
+  reported_cluster_lines: 3762285
+  reported_annotation_lines: 2299747
+  enforce_reported_line_counts: false
+  fail_on_conflicting_annotation_queries: true
+  fail_on_multi_assigned_members: true
+  missing_tokens: ["", "-", "NA", "N/A", "nan"]
+  diagnostic_example_limit: 25
+
+clustering_provenance:
+  scope: "protein dereplication across all MAGs"
+  mmseqs_min_sequence_identity: null
+  mmseqs_coverage_threshold: null
+  mmseqs_coverage_mode: null
+  status: "MMseqs identity and coverage settings require confirmation from the workflow owner"
+
+analysis:
+  excluded_timepoints: ["Ta", "Tb"]
+  ordered_timepoints: ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10"]
+  abundance_row_normalization: "none"
+  minimum_mag_carriers: 2
+  minimum_nonzero_samples: 8
+  minimum_subjects: 5
+  minimum_paired_subjects: 5
+  fdr_method: "BH"
+  fdr_threshold: 0.05
+  random_seed: 20260808
+  threads: 8
+  top_n_functions: 25
+  longitudinal_ontologies: ["COG", "KO", "KEGG_pathway", "KEGG_module", "EC", "CAZy"]
+  unknown_description_pattern: "unknown|uncharacteri[sz]ed|hypothetical|domain of unknown function|protein of unknown function|\\bDUF[0-9]*\\b"
+
+ontologies:
+  - id: "COG"
+    column: "COG_category"
+    split_mode: "characters"
+    strip_prefix: ""
+  - id: "KO"
+    column: "KEGG_ko"
+    split_mode: "comma"
+    strip_prefix: "ko:"
+  - id: "KEGG_pathway"
+    column: "KEGG_Pathway"
+    split_mode: "comma"
+    strip_prefix: "^(?:ko|map)"
+  - id: "KEGG_module"
+    column: "KEGG_Module"
+    split_mode: "comma"
+    strip_prefix: ""
+  - id: "EC"
+    column: "EC"
+    split_mode: "comma"
+    strip_prefix: ""
+  - id: "CAZy"
+    column: "CAZy"
+    split_mode: "comma"
+    strip_prefix: ""
+  - id: "PFAM"
+    column: "PFAMs"
+    split_mode: "comma"
+    strip_prefix: ""
+
+hysteresis_contrasts:
+  - id: "T3_vs_T6_ascent_post_high_climb"
+    before: "T3"
+    after: "T6"
+    recorded_altitude_m: 5200
+    evidence: "T3 is higher-ascent sampling; T6 is sampled after descent from the T5 high-climb exposure."
+    primary: true
+  - id: "T4_vs_T6_pre_post_6500m"
+    before: "T4"
+    after: "T6"
+    recorded_altitude_m: 5200
+    evidence: "T4 and T6 flank the recorded T5 6500 m high-climb sample."
+    primary: false
+  - id: "T7_vs_T8_pre_post_extreme_exposure"
+    before: "T7"
+    after: "T8"
+    recorded_altitude_m: 5200
+    evidence: "Both samples are recorded at 5200 m; the intervening summit/extreme-altitude exposure is figure-informed rather than encoded in sample_info.csv."
+    primary: false
+
+followup:
+  candidate_curation:
+    review_date: "2026-08-12"
+    relationship_statement: "Co-carriage compatible with bacterial-microcompartment metabolism"
+    relationship_claim_boundary: "MAG-level co-carriage does not establish same-gene annotation, locus colocation, operon organization, a complete Eut or Pdu pathway, expression, enzyme activity, metabolite production, or adaptation."
+  candidates:
+    - ontology: "KO"
+      term: "K04028"
+      selection_basis: "Passed ontology-specific BH correction in the prespecified T1-T10 omnibus screen"
+      curation:
+        accepted_name: "Ethanolamine-utilization microcompartment shell protein EutN"
+        gene_symbol: "eutN"
+        entity_type: "bacterial microcompartment shell protein"
+        reaction: ""
+        authoritative_sources:
+          - name: "KEGG K04028"
+            url: "https://www.kegg.jp/entry/K04028"
+        claim_boundary: "This term supports an EutN-like shell-protein identity, not a complete ethanolamine-utilization locus or pathway."
+    - ontology: "EC"
+      term: "1.2.1.87"
+      selection_basis: "Passed ontology-specific BH correction in the prespecified T1-T10 omnibus screen"
+      curation:
+        accepted_name: "Propanal dehydrogenase (CoA-propanoylating)"
+        gene_symbol: "pduP"
+        entity_type: "enzyme activity"
+        reaction: "propanal + CoA + NAD+ = propanoyl-CoA + NADH + H+"
+        authoritative_sources:
+          - name: "IUBMB EC 1.2.1.87"
+            url: "https://iubmb.qmul.ac.uk/enzyme/EC1/2/1/87.html"
+          - name: "Reviewed UniProt PduP B1VB75"
+            url: "https://www.uniprot.org/uniprotkb/B1VB75/entry"
+        claim_boundary: "The EC activity and reviewed PduP example support a propanal-dehydrogenase identity; they do not establish that every project protein is PduP or that a complete 1,2-propanediol-utilization locus is present."
+  posthoc_adjustment: "BH within each selected candidate across all pairwise T1-T10 contrasts"
+  influence_raw_p_threshold: 0.05
+  co_carriage_ontologies: ["KO", "KEGG_module", "KEGG_pathway", "EC", "CAZy"]
+  minimum_co_carriage_mags: 2
+  minimum_unknown_group_clusters: 25
+  shared_unique_adjustment: "BH within decomposition model family"
+  shared_component_posthoc_adjustment: "BH across all 45 shared-component T1-T10 contrasts"
+  optional_inputs:
+    protein_metrics_file: null
+    mag_quality_file: null
+  optional_input_environment_overrides:
+    protein_metrics_file: "MAGFUNC_PROTEIN_METRICS_FILE"
+    mag_quality_file: "MAGFUNC_MAG_QUALITY_FILE"
+
+outputs:
+  output_dir: "results/mag_functional_annotation"
+  overwrite: false
+  png_dpi: 600
+  figure_width_in: 7.2
+  figure_height_in: 5.2

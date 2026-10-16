@@ -1,0 +1,35 @@
+#!/bin/bash
+#PBS -N blackice_netmoss_env
+#PBS -l nodes=1:ppn=2,mem=16gb,walltime=04:00:00
+#PBS -j oe
+#PBS -o logs/blackice_netmoss_env.pbs.log
+
+# Update the existing glmm-hpc Conda environment and install pinned NetMoss2.
+# This job requires outbound access to conda-forge, CRAN, and GitHub.
+# Submit from the repository root:
+#   qsub hpc/update_netmoss_env.pbs
+
+set -euo pipefail
+cd "${PBS_O_WORKDIR:-$PWD}"
+mkdir -p logs
+
+CONDA_ENV="${CONDA_ENV_NAME:-glmm-hpc}"
+CONDA_MODULE="${CONDA_MODULE_NAME:-intelpython/2022.2.0}"
+
+module purge || true
+module load "${CONDA_MODULE}"
+
+echo "=== NetMoss environment update started: $(date) ==="
+echo "Host: $(hostname)"
+echo "Working directory: $(pwd)"
+echo "Git commit: $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+
+test -f environment.yml
+test -f scripts/netmoss/install_netmoss2.R
+
+conda env update -n "${CONDA_ENV}" -f environment.yml --prune
+conda run --no-capture-output -n "${CONDA_ENV}" Rscript scripts/netmoss/install_netmoss2.R
+conda run --no-capture-output -n "${CONDA_ENV}" Rscript scripts/netmoss/install_netmoss2.R --check-only
+conda run --no-capture-output -n "${CONDA_ENV}" Rscript scripts/netmoss/validate_environment.R --require-netmoss
+
+echo "=== NetMoss environment update completed: $(date) ==="

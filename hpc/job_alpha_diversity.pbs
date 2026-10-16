@@ -1,0 +1,92 @@
+#!/bin/bash
+#PBS -N blackice_alpha_diversity
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=16gb
+#PBS -l walltime=04:00:00
+#PBS -j oe
+#PBS -o blackice_alpha_diversity.pbs.log
+
+# OpenPBS wrapper for the gut MAG alpha-diversity workflow.
+# Submit from the repository root:
+#   qsub hpc/job_alpha_diversity.pbs
+#
+# Useful overrides:
+#   qsub -v CONDA_MODULE_NAME=intelpython/2022.2.0,CONDA_ENV_NAME=glmm-hpc hpc/job_alpha_diversity.pbs
+#   qsub -v BLACKICE_RAW_DIR=/path/to/raw-data hpc/job_alpha_diversity.pbs
+#   qsub -v BLACKICE_ABUNDANCE_FILE=gut.csv,BLACKICE_METADATA_FILE=sample_info.csv,BLACKICE_TAXONOMY_FILE=GDTB.csv hpc/job_alpha_diversity.pbs
+#   qsub -v BLACKICE_OUTPUT_DIR=results/alpha_diversity hpc/job_alpha_diversity.pbs
+
+set -euo pipefail
+
+cd "${PBS_O_WORKDIR:-$PWD}"
+
+mkdir -p logs results/alpha_diversity/logs results/alpha_diversity/tables results/alpha_diversity/figures
+
+RUN_LABEL="${PBS_JOBNAME:-blackice_alpha_diversity}.${PBS_JOBID:-local}"
+exec > >(tee -a "logs/${RUN_LABEL}.out") 2> >(tee -a "logs/${RUN_LABEL}.err" >&2)
+
+echo "=== BlackICE alpha-diversity job started: $(date) ==="
+echo "Host: $(hostname)"
+echo "Working directory: $(pwd)"
+echo "PBS job id: ${PBS_JOBID:-local}"
+echo "Git commit: $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
+export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
+export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
+export VECLIB_MAXIMUM_THREADS="${VECLIB_MAXIMUM_THREADS:-1}"
+
+CONDA_MODULE="${CONDA_MODULE_NAME:-intelpython/2022.2.0}"
+
+if command -v module >/dev/null 2>&1; then
+  module purge || true
+  if [ -n "$CONDA_MODULE" ]; then
+    module load "$CONDA_MODULE"
+  fi
+fi
+
+if ! command -v conda >/dev/null 2>&1; then
+  for conda_profile in \
+    "$HOME/miniconda3/etc/profile.d/conda.sh" \
+    "$HOME/anaconda3/etc/profile.d/conda.sh" \
+    "$HOME/mambaforge/etc/profile.d/conda.sh" \
+    "$HOME/miniforge3/etc/profile.d/conda.sh"
+  do
+    if [ -f "$conda_profile" ]; then
+      # shellcheck disable=SC1090
+      source "$conda_profile"
+      break
+    fi
+  done
+fi
+
+CONDA_ENV="${CONDA_ENV_NAME:-glmm-hpc}"
+if command -v conda >/dev/null 2>&1; then
+  RSCRIPT_CMD=(conda run --no-capture-output -n "$CONDA_ENV" Rscript)
+  PYTHON_CMD=(conda run --no-capture-output -n "$CONDA_ENV" python)
+else
+  echo "ERROR: conda command was not found. Set CONDA_MODULE_NAME or install/create the Conda environment first." >&2
+  exit 1
+fi
+
+OUTPUT_DIR="${BLACKICE_OUTPUT_DIR:-${BLACKICE_ALPHA_OUTPUT_DIR:-results/alpha_diversity}}"
+export BLACKICE_ALPHA_OUTPUT_DIR="$OUTPUT_DIR"
+export BLACKICE_RAW_DIR="${BLACKICE_RAW_DIR:-data/raw}"
+export BLACKICE_ABUNDANCE_FILE="${BLACKICE_ABUNDANCE_FILE:-gut.csv}"
+export BLACKICE_METADATA_FILE="${BLACKICE_METADATA_FILE:-sample_info.csv}"
+export BLACKICE_TAXONOMY_FILE="${BLACKICE_TAXONOMY_FILE:-GDTB.csv}"
+
+echo "Conda environment: $CONDA_ENV"
+echo "Raw data directory: $BLACKICE_RAW_DIR"
+echo "Abundance file: $BLACKICE_ABUNDANCE_FILE"
+echo "Metadata file: $BLACKICE_METADATA_FILE"
+echo "Taxonomy file: $BLACKICE_TAXONOMY_FILE"
+echo "Output directory: $OUTPUT_DIR"
+
+"${RSCRIPT_CMD[@]}" scripts/alpha_diversity/01_prepare_alpha_diversity_inputs.R
+"${RSCRIPT_CMD[@]}" scripts/alpha_diversity/02_calculate_alpha_diversity_vegan.R
+"${PYTHON_CMD[@]}" scripts/alpha_diversity/03_calculate_alpha_diversity_scikitbio.py
+"${RSCRIPT_CMD[@]}" scripts/alpha_diversity/04_compare_alpha_diversity_tools.R
+"${RSCRIPT_CMD[@]}" scripts/alpha_diversity/05_plot_alpha_diversity_publication.R
+
+echo "=== BlackICE alpha-diversity job finished: $(date) ==="

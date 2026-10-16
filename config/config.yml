@@ -1,0 +1,37 @@
+# ============================================
+# Mixed-Model Analysis Configuration
+# ============================================
+# Edit this file for each analysis run.
+
+project:
+  name: "metagenomics-lmm"
+  author: "Your Name"
+
+data:
+  # Portable default for cloned HPC runs. Override with BLACKICE_RAW_DIR when raw data live elsewhere.
+  raw_dir: "data/raw"
+  metadata: "sample_info.csv"
+  # Change this to oral.csv, skin.csv, diff_gut.csv, diff_oral.csv, or diff_skin.csv for later runs.
+  abundance: "gut.csv"
+  processed: "data/processed/cleaned_data.rds"
+
+model:
+  # These names are processed columns created by scripts/01_data_prep.R.
+  response: "Y"
+  subject: "Subject"
+  time: "days_from_baseline_subject"
+  mag_id: "MAG"
+  # Group is intentionally not configured yet because no true treatment/condition variable was found.
+  formula: "Y ~ days_from_baseline_subject + (1 | Subject)"
+  family: "gaussian"        # Initial baseline for numeric continuous MAG abundance.
+  optimizer: "bobyqa"        # bobyqa, Nelder_Mead, nloptwrap
+
+parallel:
+  n_cores: 4                 # CPUs per job
+  n_jobs: 1                  # array job size (1 = single job)
+
+results:
+  output_dir: "results"
+  figures: true
+  tables: true
+  session_info: true

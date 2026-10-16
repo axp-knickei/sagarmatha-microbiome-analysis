@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+message: "This software citation is prepared for v1.0.0; the release and Zenodo DOI are pending. Cite the archived version when available."
+type: software
+title: "sagarmatha-microbiome-analysis: analytical and reproducibility code for the Sagarmatha (Mount Everest) microbiome study"
+version: 1.0.0
+authors:
+  - given-names: Alex
+    family-names: Prima
+    email: "alexprima@student.ub.ac.id"
+    orcid: "https://orcid.org/0000-0003-4773-8777"
+    affiliation: "Universitas Brawijaya (doctoral student); BRIN (research assistant)"
+license: MIT
+abstract: >-
+  Journal-associated analytical and reproducibility software for the Sagarmatha
+  (Mount Everest) longitudinal gut microbiome study. This code repository provides
+  reviewed analytical workflows, configuration, environment definitions, validation
+  materials and supporting technical documentation for per-MAG mixed models,
+  diversity, subject-aware Random Forest validation, exploratory NetMoss and
+  predicted functional potential analyses. Underlying research data, participant
+  metadata, generated scientific results and private development history are not
+  distributed. Scientific reproduction requires separately obtained authorized inputs.
+keywords:
+  - longitudinal microbiome
+  - Everest
+  - metagenome-assembled genomes
+  - mixed models
+  - reproducible research
+# Author ORCID and affiliations supplied and confirmed by the author.
+# Both owner-supplied data-request emails are listed in README.md and the input guide.
+# Zenodo DOI, publication DOI and date-released are intentionally absent.
+# Author confirmed that no related publication or preprint DOI is available yet.
+# The software itself is the preferred citation; no unverified article is substituted.
+# Intended public repository name: sagarmatha-microbiome-analysis.
+# GitHub owner and repository URL are not yet verified; repository-code is omitted.
+# Release date, release URL and Zenodo version DOI await the corresponding publication steps.

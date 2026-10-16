@@ -1,0 +1,36 @@
+model_decision_rules:
+  primary_response: "log10_pseudocount"
+  primary_formula: "log10(Y + pseudocount) ~ days_from_baseline_subject + (1 | Subject)"
+  sensitivity_response: "raw"
+  sensitivity_formula: "Y ~ days_from_baseline_subject + (1 | Subject)"
+  p_value_method: "lmerTest_Satterthwaite"
+  multiple_testing: "Benjamini-Hochberg FDR"
+
+  pseudocount:
+    rule: "half_smallest_nonzero_Y"
+    value: 2.074295e-09
+
+  thresholds:
+    too_sparse_nonzero_samples: 10
+    too_sparse_nonzero_subjects: 3
+    low_variance_threshold: 1.0e-10
+
+  statuses:
+    lmm_ok: "LMM fit succeeded and is not singular."
+    lmm_singular: "LMM fit succeeded but random-effect structure is singular."
+    too_sparse: "Too few non-zero samples or too few subjects with non-zero values."
+    low_variance: "Response variance is too low for stable modeling."
+    model_failed: "Model failed or required output could not be extracted."
+
+  primary_analysis_rule: "status == 'lmm_ok'"
+  primary_significance_rule: "primary_analysis == TRUE and time_p_adj_bh_primary < 0.05"
+
+  fdr_columns:
+    time_p_adj_bh_all: "BH FDR correction across all modeled MAGs with available p-values."
+    time_p_adj_bh_primary: "BH FDR correction across MAGs where primary_analysis is TRUE."
+
+  interpretation:
+    raw_p_lt_0_05: "Nominal association only."
+    bh_q_lt_0_05: "FDR-significant association."
+    flagged_models: "Singular, sparse, low-variance, and failed models are retained in output but excluded from the primary significance claim."
+    caution: "No biological conclusion should be made without reviewing response transformation, diagnostic plots, and biological plausibility."

@@ -1,0 +1,47 @@
+#!/bin/bash
+#PBS -N blackice_netmoss_pairs
+#PBS -q workq
+#PBS -l nodes=1:ppn=8,mem=16gb,walltime=02:00:00
+#PBS -j oe
+#PBS -o logs/blackice_netmoss_matched_timepoint_companion.pbs.log
+
+# Advanced CPU-parallel matched-participant companion analysis.
+# This is not a NetMoss2 network run. It enumerates all 45 approved timepoint pairs,
+# preserves every comparison, and estimates paired genus-abundance changes.
+#
+# Submit from the repository root after the smoke test:
+# qsub -v NETMOSS_MATCHED_ACKNOWLEDGE_EXPLORATORY=YES \
+#   hpc/job_netmoss_matched_timepoint_companion.pbs
+
+set -euo pipefail
+cd "${PBS_O_WORKDIR:-$PWD}"
+mkdir -p logs results/netmoss_matched_timepoint_companion
+source hpc/netmoss_common.sh
+print_netmoss_job_context
+setup_netmoss_conda
+
+if [ "${NETMOSS_MATCHED_ACKNOWLEDGE_EXPLORATORY:-NO}" != "YES" ]; then
+  echo "ERROR: this all-pairs companion is exploratory and is not NetMoss." >&2
+  echo "Review docs/netmoss-methods.md, then resubmit with acknowledgement." >&2
+  exit 2
+fi
+
+# Parallelize across timepoint pairs. Keep numerical libraries single-threaded
+# so eight R workers do not oversubscribe the allocated CPU cores.
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+worker_count="${NETMOSS_MATCHED_THREADS:-${PBS_NP:-8}}"
+
+read -r -a rscript_cmd <<<"${NETMOSS_RSCRIPT}"
+"${rscript_cmd[@]}" scripts/netmoss/validate_environment.R
+"${rscript_cmd[@]}" scripts/netmoss/run_matched_timepoint_companion.R \
+  --config config/netmoss_matched_timepoint_companion.yml \
+  --mode advanced \
+  --threads "${worker_count}" \
+  --force
+"${rscript_cmd[@]}" scripts/netmoss/summarize_matched_timepoint_companion.R \
+  --config config/netmoss_matched_timepoint_companion.yml \
+  --force
+
+echo "Advanced matched-timepoint companion job completed: $(date)"

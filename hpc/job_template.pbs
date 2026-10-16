@@ -1,0 +1,47 @@
+#!/bin/bash
+#PBS -N legacy_mixed_model
+#PBS -l nodes=1:ppn=4,mem=16gb,walltime=24:00:00
+#PBS -j oe
+#PBS -o legacy_mixed_model_output.log
+
+# ============================================
+# Legacy HPC Job Script for Configured Mixed-Model Analysis
+# ============================================
+# The current primary project workflow is hpc/job_per_mag_lmertest.pbs,
+# which runs a per-MAG LMM. This template is kept for the older
+# 01_data_prep.R -> 02_run_glmm.R -> 03_results.R path.
+# Usage:
+#   1. Submit from the repository root: qsub hpc/job_template.pbs
+#   2. Optional email notifications: qsub -m abe -M your_email@domain hpc/job_template.pbs
+# ============================================
+
+set -euo pipefail
+
+# --- User-specific variables ---
+CONDA_ENV="${CONDA_ENV_NAME:-glmm-hpc}"
+CONDA_MODULE="${CONDA_MODULE_NAME:-intelpython/2022.2.0}"
+
+# --- Load modules ---
+module load "${CONDA_MODULE}"
+source activate "${CONDA_ENV}"
+
+# --- Navigate to project ---
+cd "${PBS_O_WORKDIR:-$PWD}"
+
+# --- Run pipeline ---
+echo "=== Job started: $(date) ==="
+echo "Host: $(hostname)"
+echo "Cores: ${PBS_NUM_PPN:-1}"
+echo "Working directory: $(pwd)"
+echo "Git commit: $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+
+# Step 1: Data prep
+Rscript scripts/01_data_prep.R
+
+# Step 2: Run configured mixed model
+Rscript scripts/02_run_glmm.R
+
+# Step 3: Generate results
+Rscript scripts/03_results.R
+
+echo "=== Job finished: $(date) ==="

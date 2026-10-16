@@ -1,0 +1,66 @@
+project:
+  name: "Sagarmatha microbiome analysis — NetMoss altitude network-stability analysis"
+  analysis_status: "exploratory_internal_reproducibility_only"
+
+inputs:
+  abundance_file: "data/raw/gut.csv"
+  metadata_file: "data/raw/sample_info.csv"
+  taxonomy_file: "data/raw/GDTB.csv"
+
+columns:
+  sample_id: "sampleID"
+  subject_id: "group"
+  timepoint: "Timepoint"
+  taxonomy_feature_id: "Genome"
+
+design:
+  group_a_label: "low_altitude_and_initial_reach"
+  group_a_timepoints: ["T1", "T2", "T9", "T10"]
+  group_b_label: "high_altitude_expedition_period"
+  group_b_timepoints: ["T3", "T4", "T5", "T6", "T7", "T8"]
+  excluded_timepoints: ["Ta", "Tb"]
+  primary_cohort: "matched_participants"
+  secondary_cohort: "all_available_participants"
+  participant_aggregation: "median"
+
+taxonomic_analyses:
+  genus:
+    primary_prevalence_threshold: 0.80
+    sensitivity_thresholds: [0.50, 0.70, 0.80]
+  family:
+    primary_prevalence_threshold: 0.50
+    sensitivity_thresholds: [0.50, 0.70, 0.80]
+  prevalence_rule: "detected_in_both_groups"
+  detection_threshold: 0
+  close_to_relative_abundance: true
+
+network:
+  method: "sparcc"
+  smoke_test_method: "spearman"
+  edge_magnitude_threshold: 0.40
+  random_seed: 20260814
+
+netmoss:
+  scaled: true
+  deep_split: 4
+  minimum_module_size: 20
+  soft_power: 5
+  top_taxa: 10
+  package_repository: "xiaolw95/NetMoss2"
+  package_commit: "79da905efccfc8bec9c08a4f447bf1ddb12223f6"
+
+stability:
+  bootstrap_replicates: 1000
+  minimum_success_fraction: 0.90
+  selection_frequency_threshold: 0.80
+  network_similarity_threshold: 0.70
+  module_ari_threshold: 0.75
+  degenerate_module_fraction: 0.80
+
+execution:
+  default_threads: 8
+  test_bootstrap_replicates: 10
+
+outputs:
+  output_dir: "results/netmoss_altitude_stability"
+  overwrite: false

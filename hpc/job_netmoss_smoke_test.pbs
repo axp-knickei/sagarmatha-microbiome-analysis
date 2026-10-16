@@ -1,0 +1,20 @@
+#!/bin/bash
+#PBS -N blackice_netmoss_test
+#PBS -l nodes=1:ppn=2,mem=8gb,walltime=01:00:00
+#PBS -j oe
+#PBS -o logs/blackice_netmoss_smoke_test.pbs.log
+
+# Scheduler-level smoke test using repository test data and synthetic NetMoss
+# result objects. This does not report biological findings.
+# qsub hpc/job_netmoss_smoke_test.pbs
+
+set -euo pipefail
+cd "${PBS_O_WORKDIR:-$PWD}"
+mkdir -p logs
+source hpc/netmoss_common.sh
+print_netmoss_job_context
+setup_netmoss_conda
+
+bash hpc/tests/test_netmoss_pbs.sh "results/netmoss_smoke/${PBS_JOBID:-local}"
+
+echo "NetMoss HPC smoke test completed: $(date)"

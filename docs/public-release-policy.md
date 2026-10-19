@@ -6,6 +6,14 @@ previously identified renderer content holds.
 See the [current release gates](public-release-checklist.md). Dated entries below
 preserve earlier decisions and validation boundaries.
 
+Verified repository identity:
+[axp-knickei/sagarmatha-microbiome-analysis](https://github.com/axp-knickei/sagarmatha-microbiome-analysis).
+At the metadata-review checkpoint on 2026-10-17, before freezing/publication,
+the GitHub repository was private and empty. A separate local checkout had fresh
+history and a reviewed first commit; the metadata refresh was uncommitted and
+unfrozen. Status and authorization statements in this decision history describe
+their recorded preparation stages, not current visibility or later approvals.
+
 Current public request contacts: Alex Prima at
 [alexprima@student.ub.ac.id](mailto:alexprima@student.ub.ac.id) or
 [alex.prima@uq.net.au](mailto:alex.prima@uq.net.au), supplied by the owner on
@@ -49,7 +57,8 @@ working tree. Publish only a reviewed provenance summary and included-file hashe
 do not copy private Git objects, branches, tags, logs or excluded evidence.
 
 The approved public repository name is `sagarmatha-microbiome-analysis`.
-Citation omits `repository-code` until the GitHub owner and actual URL are verified. The setup helper requires an explicit approved URL when
+Citation records the verified GitHub URL in `repository-code`; no DOI or release
+date is supplied before publication. The setup helper requires an explicit approved URL when
 cloning; it can still operate within an existing checkout. Retained files no
 longer present the private repository as the public release destination.
 
@@ -299,3 +308,27 @@ parsed R expressions and all job commands/settings are preserved. One public
 replacement hash is refreshed for its corrected usage comment, without changing
 any source/destination mapping or file-scope disposition. These documentation
 fixes are part of the authorized final technical review, not new analyses.
+
+## 2026-10-17 — verified repository identity and metadata refresh
+
+The owner confirmed `axp-knickei` as the intended namespace and authority to
+authorize preparation of the approved code-only repository under the documented
+licensing conditions. The separate GitHub repository was created private and
+empty. The reviewed first local commit is
+`f44036843662e0a53ced56bca5a164e0f96d09d9`, containing 299 approved files with all
+17 replacement mappings verified. No private Git history was imported and no
+source was pushed. Checklist #25 records that completed preparation checkpoint.
+
+The owner subsequently approved metadata-only updates using the verified URL.
+README, citation and current release guidance now distinguish completed private
+preparation from future public publication. The previous candidate and first
+commit remain intact; revised metadata remains uncommitted for owner review.
+Models, code, tests, replacement implementations, scientific limitations,
+MIT/third-party attribution and conditional data access are unchanged.
+
+Repository identity is the completed portion of #4. Release date, release URL
+and Zenodo version DOI remain pending their actual publication steps. Frozen
+snapshot checks, owner snapshot approval, further commits, push, public visibility,
+tagging, GitHub Release and Zenodo actions require subsequent authorization.
+Permission to coordinate requests does not establish unrestricted authority to
+redistribute any excluded data component.

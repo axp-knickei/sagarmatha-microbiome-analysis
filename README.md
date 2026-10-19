@@ -44,11 +44,14 @@ release command. The private original Makefile remains unchanged.
 
 ## Release, citation and reuse
 
-The private research/development repository and its history remain private. A
-separate public repository will be assembled only from the final approved manifest
-and start with fresh history. Its approved name is `sagarmatha-microbiome-analysis`.
-The GitHub owner and exact URL will be recorded after repository creation and
-verification; no clone URL, release URL or badge is claimed yet. See
+The private research/development repository and its history remain private. The
+separate release repository is
+[axp-knickei/sagarmatha-microbiome-analysis](https://github.com/axp-knickei/sagarmatha-microbiome-analysis).
+The release source uses fresh Git history and contains only reviewed code and
+technical materials. Private research history and excluded materials are not
+part of this resource. Verify version-specific releases and citation identifiers
+at the repository; the repository URL alone does not establish public access or
+an archived release. See
 [release policy](docs/public-release-policy.md)
 and [open gates](docs/public-release-checklist.md).
 
@@ -61,8 +64,9 @@ is controlled access / available upon reasonable request:
 > archive. These materials may be made available upon reasonable request to the
 > authors, subject to applicable permissions and data-use conditions.
 
-This statement is for use at publication; the code is currently being prepared
-for public release. Alex Prima will receive and coordinate requests at
+This is the approved statement for public distribution of the code; it does not
+itself establish repository visibility or the existence of an archived release.
+Alex Prima receives and coordinates requests at
 [alexprima@student.ub.ac.id](mailto:alexprima@student.ub.ac.id) or
 [alex.prima@uq.net.au](mailto:alex.prima@uq.net.au).
 Component-specific permissions and reuse conditions remain pending verification
@@ -70,11 +74,12 @@ before any data provision.
 Request coordination does not imply unrestricted redistribution authority or
 automatic request approval. See the
 [data-access statement and conditions](docs/release-data-requirements.md#intended-access-policy--confirmed-contacts-and-conditional-permissions).
-No public study accession is established.
+No public study accession is supplied in this code archive.
 
 [Software citation](CITATION.cff) records the approved name, scope and authorship.
-Repository URL, release date and Zenodo DOI remain pending verified identifiers.
-No release has been published.
+The verified repository URL is recorded in the citation. Use verified
+version-specific citation metadata and an archive DOI when available. Citation
+metadata alone does not establish publication or public visibility.
 
 ### Third-party palette material
 

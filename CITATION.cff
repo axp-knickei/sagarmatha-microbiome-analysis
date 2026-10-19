@@ -1,8 +1,9 @@
 cff-version: 1.2.0
-message: "This software citation is prepared for v1.0.0; the release and Zenodo DOI are pending. Cite the archived version when available."
+message: "Cite this software version; use the archived version and its DOI when available."
 type: software
 title: "sagarmatha-microbiome-analysis: analytical and reproducibility code for the Sagarmatha (Mount Everest) microbiome study"
 version: 1.0.0
+repository-code: "https://github.com/axp-knickei/sagarmatha-microbiome-analysis"
 authors:
   - given-names: Alex
     family-names: Prima
@@ -28,8 +29,13 @@ keywords:
 # Author ORCID and affiliations supplied and confirmed by the author.
 # Both owner-supplied data-request emails are listed in README.md and the input guide.
 # Zenodo DOI, publication DOI and date-released are intentionally absent.
-# Author confirmed that no related publication or preprint DOI is available yet.
+# At the 2026-10-17 metadata-review checkpoint, no related publication or
+# preprint DOI had been supplied by the author.
 # The software itself is the preferred citation; no unverified article is substituted.
 # Intended public repository name: sagarmatha-microbiome-analysis.
-# GitHub owner and repository URL are not yet verified; repository-code is omitted.
-# Release date, release URL and Zenodo version DOI await the corresponding publication steps.
+# GitHub owner and repository URL are verified.
+# At the 2026-10-17 metadata-review checkpoint, before freezing/publication,
+# the repository was private and empty; no source had been pushed.
+# These comments record preparation history, not current visibility or release status.
+# At that checkpoint, release date, release URL and Zenodo version DOI
+# awaited the corresponding publication steps.

@@ -1,16 +1,24 @@
 # Public v1.0.0 release gates
 
-Status: local inspection-only staging and refresh are authorized. No Git
-initialization, commit, tag or publication is authorized. The historical private `RELEASE_CHECKLIST.md` remains
+Historical preparation record: the status statements and checkboxes below capture
+the metadata-review checkpoint on 2026-10-17, before final snapshot approval or
+freezing. They do not assert current visibility, publication status or subsequent
+owner authorization. Later approval and verification records are maintained
+separately; this source record is not rewritten solely to update frozen status.
+
+Status (2026-10-17): the owner authorized the separate private GitHub repository
+and first local commit, followed by this metadata-only candidate refresh. The
+repository remains private and empty on GitHub. Further commits, freezing, push,
+tags and publication require separate authorization. The historical private `RELEASE_CHECKLIST.md` remains
 unchanged as a research preparation record and is excluded from the public archive.
 
-Current inspection status (2026-10-15): 299 files are approved for inclusion and
+Current candidate scope: 299 files are approved for inclusion and
 293 for exclusion, with 17 original/replacement mappings. The RF feature-stability
 replacement passed synthetic and authorized-output checks and all nine public suites
 in refreshed inspection staging. The local dependency and scoped scientific-workflow
 gates remain supported with documented
 limitations. Renderer gate #5 is complete for the approved public source mappings.
-Inspection staging is not a frozen or owner-approved release candidate.
+Private preparation approval does not approve a frozen snapshot or publication.
 
 ## Scope and disclosure
 
@@ -26,6 +34,12 @@ Inspection staging is not a frozen or owner-approved release candidate.
 - [x] Owner approved the intended controlled-access / reasonable-request public statement; study data, metadata and restricted processed data remain excluded.
 - [x] Establish Alex Prima as request contact for receiving/coordinating requests, separately from permission authority.
 - [ ] Record explicitly supplied public contact details; verify applicable component-specific permission authorities and data/annotation reuse conditions before data provision.
+
+The repository-identity portion of #4 is complete: the verified repository is
+[axp-knickei/sagarmatha-microbiome-analysis](https://github.com/axp-knickei/sagarmatha-microbiome-analysis),
+currently private. README and CITATION.cff now record its actual URL. The combined
+item remains unchecked because the version DOI and release date must await
+publication; neither identifier is invented.
 
 The public-contact portion of #12 is complete: Alex Prima receives requests at
 [alexprima@student.ub.ac.id](mailto:alexprima@student.ub.ac.id) or
@@ -57,9 +71,16 @@ before the code release, or that data-sharing permission has been granted.
 
 ## Publication — separate explicit authorization required
 
-- [ ] Create and review release commits in the separate public repository.
+- [x] Create and review release commits in the separate public repository.
 - [ ] Authorize public visibility, v1.0.0 tagging, GitHub Release and Zenodo integration/archive.
 - [ ] Verify DOI/version/archive contents and update citation metadata.
+
+The first local preparation commit is
+`f44036843662e0a53ced56bca5a164e0f96d09d9`. Its 299-file tree and staged index were
+reviewed against the approved hashes, with all 17 replacements verified and no
+private history imported. It has not been pushed. The subsequent metadata-only
+refresh remains uncommitted and requires a new candidate inventory and review.
+Completion of #25 does not authorize another commit or complete snapshot approval.
 
 ## Current evidence and remaining release gates
 
@@ -89,7 +110,7 @@ missing older temporary bundles, Class 1 numerical differences and EC diagnostic
 limits remain disclosed; closure does not certify every model's inference or
 full upstream reconstruction. Final manuscript approval remains separate.
 
-There are currently 18 checked and 9 unchecked gates. No unresolved file-scope
+There are currently 19 checked and 8 unchecked gates. No unresolved file-scope
 decisions remain. Public contact details are recorded; component-specific permission
 terms before data provision, final snapshot checks, owner approval
 and publication are separate requirements.

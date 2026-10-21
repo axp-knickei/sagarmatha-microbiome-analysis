@@ -1,8 +1,10 @@
 cff-version: 1.2.0
-message: "Cite this software version; use the archived version and its DOI when available."
+message: "Cite this software version using its version-specific DOI."
 type: software
 title: "sagarmatha-microbiome-analysis: analytical and reproducibility code for the Sagarmatha (Mount Everest) microbiome study"
 version: 1.0.0
+doi: "10.5281/zenodo.23497840"
+date-released: "2026-10-20"
 repository-code: "https://github.com/axp-knickei/sagarmatha-microbiome-analysis"
 authors:
   - given-names: Alex
@@ -28,7 +30,8 @@ keywords:
   - reproducible research
 # Author ORCID and affiliations supplied and confirmed by the author.
 # Both owner-supplied data-request emails are listed in README.md and the input guide.
-# Zenodo DOI, publication DOI and date-released are intentionally absent.
+# Version DOI and release date identify the published software release.
+# No related journal/preprint DOI is asserted here.
 # At the 2026-10-17 metadata-review checkpoint, no related publication or
 # preprint DOI had been supplied by the author.
 # The software itself is the preferred citation; no unverified article is substituted.

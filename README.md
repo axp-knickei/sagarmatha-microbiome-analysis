@@ -77,9 +77,19 @@ automatic request approval. See the
 No public study accession is supplied in this code archive.
 
 [Software citation](CITATION.cff) records the approved name, scope and authorship.
-The verified repository URL is recorded in the citation. Use verified
-version-specific citation metadata and an archive DOI when available. Citation
-metadata alone does not establish publication or public visibility.
+Version `v1.0.0` was released on 2026-10-20 and is available from the
+[GitHub Release](https://github.com/axp-knickei/sagarmatha-microbiome-analysis/releases/tag/v1.0.0)
+and [Zenodo record](https://zenodo.org/records/23497840).
+
+Recommended citation:
+
+Prima, A. (2026). *sagarmatha-microbiome-analysis: analytical and reproducibility
+code for the Sagarmatha (Mount Everest) microbiome study* (v1.0.0) [Software].
+Zenodo. https://doi.org/10.5281/zenodo.23497840
+
+Use the [version DOI](https://doi.org/10.5281/zenodo.23497840) to cite this exact
+release. The [concept DOI](https://doi.org/10.5281/zenodo.23497839) represents all
+versions.
 
 ### Third-party palette material
 
